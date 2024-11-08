@@ -59,11 +59,74 @@ class Joystick:
 
 '''-------------------------------------------------- 하드웨어 세팅 부분 --------------------------------------------------'''
 
-joystick = Joystick()
+import numpy as np
+class Character:
+    def __init__(self):
+        self.character_source = Image.open('image_source/test_character.png')
+        self.state = None
+        self.position = np.array([240/2 - 20, 240/2 - 20, 240/2 + 20, 240/2 + 20])
 
-background = Image.open('16-bit_style_beach_background_illustration_first_converted.png')
+    def move(self, command = None):
+        if command == None:
+            self.state = None
+        
+        else:
+            self.state = 'move'
+
+            if command == 'up_pressed':
+                self.position[1] -= 5
+                self.position[3] -= 5
+                print("up")
+
+            elif command == 'down_pressed':
+                self.position[1] += 5
+                self.position[3] += 5
+                print("down")
+
+            elif command == 'left_pressed':
+                self.position[0] -= 5
+                self.position[2] -= 5
+                print("left")
+                
+            elif command == 'right_pressed':
+                self.position[0] += 5
+                self.position[2] += 5
+                print("right")
+
+'''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
+
+joystick = Joystick()
+my_circle = Character()
+
+background = Image.open('image_source/test_image.png')
+
 my_image = Image.new("RGB", (joystick.width, joystick.height)) #디스플레이 초기화
 my_draw = ImageDraw.Draw(my_image) #그림 그리기 위한 도구 선언
 
 my_draw.rectangle((0, 0, joystick.width, joystick.height), fill=(0, 0, 255, 100))
 joystick.disp.image(background)
+
+
+
+while True:                                                 #실제로 실행되는 부분
+    command = None
+    if not joystick.button_U.value:  # up pressed
+        command = 'up_pressed'
+
+    elif not joystick.button_D.value:  # down pressed
+        command = 'down_pressed'
+
+    elif not joystick.button_L.value:  # left pressed
+        command = 'left_pressed'
+
+    elif not joystick.button_R.value:  # right pressed
+        command = 'right_pressed'
+        
+    else:
+        command = None
+
+    my_circle.move(command)
+    
+    joystick.disp.image(Image.open('image_source/test_character.png'))
+    
+    #이미지가 이동하는 모션을 구현해야함, 내 생각에는 클래스에서 어찌저찌 해보면 될 거 같은데..
