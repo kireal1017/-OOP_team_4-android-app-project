@@ -60,7 +60,6 @@ class Joystick:
 
 '''-------------------------------------------------- 하드웨어 세팅 부분 --------------------------------------------------'''
 
-
 class Character:
     def __init__(self, width, height):
         self.character_source = Image.open('esw_raspberryPi_game_project/image_source/test_character.png')
@@ -123,17 +122,24 @@ class Character:
 
 '''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
 
+#조이스틱, 캐릭터 초기화
 joystick = Joystick()
 my_circle = Character(joystick.width, joystick.height)
 
-background = Image.open('esw_raspberryPi_game_project/image_source/background/background_evening.png')
-background = background.crop((0, 0, joystick.width, joystick.height))
+#배경 이미지
+original_background = Image.open('esw_raspberryPi_game_project/image_source/background/background_evening.png')
+background = original_background.crop((0, 0, joystick.width, joystick.height))
 
+#디스플레이 초기화 및 출력
 my_image = Image.new("RGB", (joystick.width, joystick.height)) #디스플레이 초기화
-joystick.disp.image(background)
 
-# 배경 슬라이드 오프셋
-bg_offset = [0, 0]
+bg_width, bg_height = background.size #배경 이미지의 원래 크기 가져오기
+bg_offset = [0, 0] #배경 이미지 슬라이드 위치 저장
+
+
+print(original_background.size)
+print(background.size)
+
 
 while True:
     command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
@@ -159,35 +165,24 @@ while True:
     if not joystick.button_L.value:  # left pressed
         command['left_pressed'] = True
         command['move'] = True
-        bg_offset[0] = min(bg_offset[0] + 5, 0)  # 왼쪽으로 이동
+
 
     if not joystick.button_R.value:  # right pressed
         command['right_pressed'] = True
         command['move'] = True
-        bg_offset[0] = max(bg_offset[0] - 5, joystick.width - bg_width)  # 오른쪽으로 이동
-        
-    # 캐릭터 이동 업데이트
+    
+
+    
+    # 위치 업데이트
     my_circle.move(command)
     
-    # 배경 이미지 슬라이드 크롭
-    bg_cropped = background.crop((
-        -bg_offset[0],
-        -bg_offset[1],
-        -bg_offset[0] + joystick.width,
-        -bg_offset[1] + joystick.height
-    ))
-    
-    # 배경 및 캐릭터 그리기
-    my_image.paste(bg_cropped, (0, 0))  # 크롭된 배경을 디스플레이에 표시
-    my_image.paste(my_circle.character_source, (int(my_circle.position[0]), int(my_circle.position[1])),
-                   my_circle.character_source)
+    # 배경 이미지와 캐릭터를 현재 위치에 맞게 그리기
+    my_image.paste(background, (0, 0))  # 배경을 먼저 그리기
 
-    # 디스플레이에 출력
+    # 디스플레이에 표시
     joystick.disp.image(my_image)
 
-    time.sleep(0.01)  # 갱신 속도 조절
-    
-
+    time.sleep(0.05)  # 너무 빠른 갱신을 방지하기 위해 약간의 딜레이 추가
     
     '''        
     if not joystick.button_A.value:   #버튼 A
@@ -210,7 +205,6 @@ while True:
 
     time.sleep(0.01)  # 너무 빠른 갱신을 방지하기 위해 약간의 딜레이 추가
     
-
 
 while True:                                                 #실제로 실행되는 부분
     command = None
