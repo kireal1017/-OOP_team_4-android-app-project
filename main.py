@@ -1,5 +1,6 @@
 import time
 import random
+import numpy as np
 from colorsys import hsv_to_rgb
 import board
 from digitalio import DigitalInOut, Direction
@@ -59,7 +60,7 @@ class Joystick:
 
 '''-------------------------------------------------- 하드웨어 세팅 부분 --------------------------------------------------'''
 
-import numpy as np
+
 class Character:
     def __init__(self, width, height):
         self.character_source = Image.open('esw_raspberryPi_game_project/image_source/test_character.png')
@@ -84,9 +85,8 @@ class Character:
                     print("점프 실행")
                     self.jump_state = False
                     
-                
-                #self.position[1] -= 5
-                #self.position[3] -= 5
+                self.position[1] -= 5
+                self.position[3] -= 5
 
             if command['down_pressed']:
                 if self.jump_state == True:
@@ -96,8 +96,8 @@ class Character:
                     print("기어가는 중")
                     self.crawl_state = False
                 
-                #self.position[1] += 5
-                #self.position[3] += 5
+                self.position[1] += 5
+                self.position[3] += 5
 
             if command['left_pressed']:
                 self.position[0] -= 5
@@ -117,9 +117,9 @@ class Character:
             
             print(self.position)
             if self.position[0] < 0 or self.position[2] > 240:
-                print("경고: 캐릭터가 가로 경계를 벗어나려고 합니다!")
+                print("캐릭터가 가로 경계 벗어남")
             if self.position[1] < 0 or self.position[3] > 240:
-                print("경고: 캐릭터가 세로 경계를 벗어나려고 합니다!")
+                print("캐릭터가 세로 경계 벗어남")
 
 '''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
 
@@ -168,7 +168,6 @@ while True:
         command = 'button_B_pressed'
     else:
         command = None
-        
     '''
 
     # 위치 업데이트
