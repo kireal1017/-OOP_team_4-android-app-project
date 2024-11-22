@@ -106,10 +106,10 @@ class Character:
                 self.position[0] += 5
                 self.position[2] += 5
             
-            elif command == 'button_A_pressed':
+            if command == 'button_A_pressed':
                 print("버튼 A 입력")
             
-            elif command == 'button_B_pressed':
+            if command == 'button_B_pressed':
                 print("버튼 B 입력")
             
             
@@ -122,20 +122,60 @@ class Character:
 
 '''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
 
+
+class BackgroundScroller:
+    def __init__(self, image, display_width, display_height):
+        self.image = image
+        self.display_width = display_width
+        self.display_height = display_height
+        self.scroll_position = 0  # 현재 스크롤 위치
+        self.image_width = image.width
+        self.maxplayerRange = 5
+
+    def rightScroll(self, step):
+        """배경 이미지를 step만큼 이동"""
+        if self.scroll_position >= (self.image_width - self.display_width - self.maxplayerRange): #오른쪽 끝에 도달했을 경우
+            step = 0 #이 이상으로는 움직이지 않게 끔
+        
+        print(self.scroll_position)                 #테스트 출력
+        self.scroll_position += step
+    
+    def leftScroll(self, step):
+        if self.scroll_position <= self.maxplayerRange: #왼쪽 끝에 도달했을 경우
+            step = 0
+        
+        print(self.scroll_position)                 #테스트 출력
+        self.scroll_position -= step
+        
+
+    def get_cropped_image(self):
+        """현재 스크롤 위치에 맞게 자른 이미지를 반환"""
+        left = self.scroll_position
+        right = self.scroll_position + self.display_width
+        return self.image.crop((left, 0, right, self.display_height))
+
+
+'''-------------------------------------------------- 배경 세팅 --------------------------------------------------'''
+
 #조이스틱, 캐릭터 초기화
 joystick = Joystick()
 my_circle = Character(joystick.width, joystick.height)
 
 #배경 이미지
 original_background = Image.open('esw_raspberryPi_game_project/image_source/background/background_evening.png')
-background = original_background.crop((0, 0, joystick.width, joystick.height))
+sunset_background = Image.open('esw_raspberryPi_game_project/image_source/background/background_sunset.png')
+midnight_background = Image.open('esw_raspberryPi_game_project/image_source/background/background_midnight.png')
+
+# 배경 클래스 초기화
+scroller = BackgroundScroller(midnight_background, joystick.width, joystick.height)
+
+background = sunset_background.crop((0, 0, joystick.width, joystick.height))
 
 #디스플레이 초기화 및 출력
 my_image = Image.new("RGB", (joystick.width, joystick.height)) #디스플레이 초기화
 
 bg_width, bg_height = background.size #배경 이미지의 원래 크기 가져오기
 bg_offset = [0, 0] #배경 이미지 슬라이드 위치 저장
-
 
 print(original_background.size)
 print(background.size)
@@ -154,6 +194,7 @@ while True:
         command['move'] = True
 
     if not joystick.button_D.value:  # down pressed
+        scroller.leftScroll(step = 3) # 왼쪽 이동                   <- 반대로 3 + 5가 되어서 더 빨리 이동함
         if not joystick.button_L.value:
             print("왼쪽 기어가기")
         elif not joystick.button_R.value:
@@ -165,80 +206,18 @@ while True:
     if not joystick.button_L.value:  # left pressed
         command['left_pressed'] = True
         command['move'] = True
+        scroller.leftScroll(step = 5) # 왼쪽 배경 이동
 
 
     if not joystick.button_R.value:  # right pressed
         command['right_pressed'] = True
         command['move'] = True
-    
-
-    
-    # 위치 업데이트
-    my_circle.move(command)
-    
-    # 배경 이미지와 캐릭터를 현재 위치에 맞게 그리기
-    my_image.paste(background, (0, 0))  # 배경을 먼저 그리기
-
-    # 디스플레이에 표시
-    joystick.disp.image(my_image)
-
-    time.sleep(0.05)  # 너무 빠른 갱신을 방지하기 위해 약간의 딜레이 추가
-    
-    '''        
-    if not joystick.button_A.value:   #버튼 A
-        command = 'button_A_pressed'
-    elif not joystick.button_B.value:   #버튼 B
-        command = 'button_B_pressed'
-    else:
-        command = None
-    
-
-    # 위치 업데이트
-    my_circle.move(command)
-    
-    # 배경 이미지와 캐릭터를 현재 위치에 맞게 그리기
-    my_image.paste(background, (0, 0))  # 배경을 먼저 그리기
-    my_image.paste(my_circle.character_source, (int(my_circle.position[0]), int(my_circle.position[1])), my_circle.character_source)
-
-    # 디스플레이에 표시
-    joystick.disp.image(my_image)
-
-    time.sleep(0.01)  # 너무 빠른 갱신을 방지하기 위해 약간의 딜레이 추가
-    
-
-while True:                                                 #실제로 실행되는 부분
-    command = None
-    if not joystick.button_U.value:  # up pressed
-        command = 'up_pressed'
-
-    elif not joystick.button_D.value:  # down pressed
-        command = 'down_pressed'
-
-    elif not joystick.button_L.value:  # left pressed
-        command = 'left_pressed'
-
-    elif not joystick.button_R.value:  # right pressed
-        command = 'right_pressed'
+        scroller.rightScroll(step = 5) # 오른쪽 배경 이동
         
-    else:
-        command = None
-
-    #my_circle.move(command)
+    if not joystick.button_A.value:
+        command['button_A_pressed'] = True
+        
+    cropped_background = scroller.get_cropped_image() # 현재 스크롤 상태에 맞게 이미지를 가져옴
+    joystick.disp.image(cropped_background)
     
-    #joystick.disp.image(Image.open('image_source/test_character.png'))
-   
-    
-    my_circle.move(command)
-    
-    # 배경 이미지와 캐릭터를 현재 위치에 맞게 그리기
-    my_image.paste(background, (0, 0))  # 배경을 먼저 그리기
-    my_image.paste(my_circle.character_source, (int(my_circle.position[0]), int(my_circle.position[1])), my_circle.character_source)
-
-    # 디스플레이에 표시
-    joystick.disp.image(Image.open('esw_raspberryPi_game_project/image_source/test_character.png'))
-
-    time.sleep(0.05)  # 너무 빠른 갱신을 방지하기 위해 약간의 딜레이 추가
-    
-    #이미지가 이동하는 모션을 구현해야함, 내 생각에는 클래스에서 어찌저찌 해보면 될 거 같은데..
-    
-    '''
+    time.sleep(0.02) #딜레이로 속도 조절
