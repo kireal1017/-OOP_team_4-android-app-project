@@ -34,6 +34,9 @@ logo_x = (joystick.width - logo_width) // 2
 logo_y = (joystick.height - logo_height) // 2
 logo_image = Image.new("RGB", (joystick.width, joystick.height))
 
+brightness = 1.0                        # 밝기 값
+fade_out_duration = 30                  # 어둡게 하는 단계
+fade_step = 1 / fade_out_duration
 
 while True:
     if not (joystick.button_U.value and joystick.button_D.value and 
@@ -95,10 +98,6 @@ while True:
     time.sleep(0.03)  # 딜레이
 
 
-brightness = 1.0        # 밝기 값
-fade_out_duration = 30  # 어둡게 하는 단계
-fade_step = 1 / fade_out_duration
-
 for i in range(fade_out_duration):      # 밝기를 줄이기
     enhancer = ImageEnhance.Brightness(combined_image)
     dimmed_image = enhancer.enhance(brightness)
@@ -106,4 +105,5 @@ for i in range(fade_out_duration):      # 밝기를 줄이기
     joystick.disp.image(dimmed_image)   # 디스플레이에 어두워지는 이미지를 출력
     
 black_background = Image.new("RGB", (joystick.width, joystick.height), "black")
+black_background.paste(start_logo, (logo_x, logo_y), mask=start_logo)           # 로고 출력
 joystick.disp.image(black_background)
