@@ -3,40 +3,41 @@ from resource_img import morning_background, sunset_background, midnight_backgro
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance  # 밝기 조절
 import time
 
-#조이스틱 버튼 값을 받기 위한 클래스
-joystick = Joystick()
 
-# 배경 클래스 초기화
-scroller = BackgroundScroller(morning_background, joystick.width, joystick.height)
-
-# 배경화면 관련 
-background = sunset_background.crop((0, 0, joystick.width, joystick.height))
-bg_width, bg_height = background.size # 배경 이미지의 원래 크기 가져오기
-bg_offset = [0, 0]                    # 배경 이미지 슬라이드 위치 저장
-
-
-font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # 폰트 설정
-font = ImageFont.truetype(font_path, 23)                            # 폰트 크기
-
-
-# 크로스페이드 관련 변수들
-fade_duration = 40                              # 총 크로스페이드 단계 수, 값이 클수록 크로스페이드가 자연스럽게 구현됨
-fade_step = 0                                   # 현재 크로스페이드 단계
-current_background = morning_background         # 시작 배경화면
-next_background = sunset_background             # 다음 배경화면
-
-scroll_vector = True                               # 스크롤 좌우를 제어하기 위한 값
-
-
-# 로고 사이즈 계산 후 중앙으로 배치하기
-logo_width, logo_height = start_logo.size
-logo_x = (joystick.width - logo_width) // 2
-logo_y = (joystick.height - logo_height) // 2
-logo_image = Image.new("RGB", (joystick.width, joystick.height))
 
 
 #게임 시작 전 보여줄 화면
 def game_wait():
+    #조이스틱 버튼 값을 받기 위한 클래스
+    joystick = Joystick()
+
+    # 배경 클래스 초기화
+    scroller = BackgroundScroller(morning_background, joystick.width, joystick.height)
+
+    # 배경화면 관련 
+    background = sunset_background.crop((0, 0, joystick.width, joystick.height))
+    bg_width, bg_height = background.size # 배경 이미지의 원래 크기 가져오기
+    bg_offset = [0, 0]                    # 배경 이미지 슬라이드 위치 저장
+
+
+    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # 폰트 설정
+    font = ImageFont.truetype(font_path, 23)                            # 폰트 크기
+
+
+    # 크로스페이드 관련 변수들
+    fade_duration = 40                              # 총 크로스페이드 단계 수, 값이 클수록 크로스페이드가 자연스럽게 구현됨
+    fade_step = 0                                   # 현재 크로스페이드 단계
+    current_background = morning_background         # 시작 배경화면
+    next_background = sunset_background             # 다음 배경화면
+
+    scroll_vector = True                               # 스크롤 좌우를 제어하기 위한 값
+
+
+    # 로고 사이즈 계산 후 중앙으로 배치하기
+    logo_width, logo_height = start_logo.size
+    logo_x = (joystick.width - logo_width) // 2
+    logo_y = (joystick.height - logo_height) // 2
+    logo_image = Image.new("RGB", (joystick.width, joystick.height))
     while True:
         if not (joystick.button_U.value and joystick.button_D.value and 
                 joystick.button_L.value and joystick.button_R.value and 
@@ -113,3 +114,5 @@ def game_wait():
     time.sleep(2)
 
     return 0
+
+game_wait()

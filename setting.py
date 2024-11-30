@@ -3,7 +3,7 @@ import numpy as np
 from colorsys import hsv_to_rgb
 import board
 from digitalio import DigitalInOut, Direction
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 from adafruit_rgb_display import st7789
 
 class Joystick:
@@ -61,7 +61,7 @@ class Joystick:
 
 class Character:
     def __init__(self, width, height):
-        self.character_source = Image.open('esw_raspberryPi_game_project/image_source/test_80.png')
+        self.character_source = Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_80.png')
         self.state = None
         self.position = np.array([width/2 - 20, height/2 - 20, width/2 + 20, height/2 + 20])
         self.jump_state = False

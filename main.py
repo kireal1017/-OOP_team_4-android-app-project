@@ -4,7 +4,7 @@ from PIL import Image
 import time
 import random
 
-from start_environment import game_wait #게임 시작화면
+from start_environment import game_wait #게임 시작화면 불러온 동시에 게임 시작함
 
 #조이스틱, 캐릭터 초기화
 joystick = Joystick()
@@ -26,9 +26,6 @@ character_width, character_height = my_circle.character_source.size
 center_x = joystick.width // 2 - character_width // 2
 center_y = joystick.height // 2 - character_height // 2
 
-
-game_wait()
-print("게임 끝남")
 
 while True:
     command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
@@ -86,7 +83,7 @@ while True:
 
     # 프레임 딜레이
     time.sleep(0.01)  # 짧은 시간 딜레이
-    
+
 '''
     cropped_background = scroller.get_cropped_image() # 현재 스크롤 상태에 맞게 이미지를 가져옴
     joystick.disp.image(cropped_background)
