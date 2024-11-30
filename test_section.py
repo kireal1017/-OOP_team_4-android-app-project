@@ -125,6 +125,10 @@ class Character:
         # 총알 발사를 위한 캐릭터 중앙 점 추가
         self.center = np.array([(self.position[0] + self.position[2]) / 2, (self.position[1] + self.position[3]) / 2])
         self.outline = "#FFFFFF"
+        self.health = 100 # 내 체력, 초기 체력은 100
+        self.max_health = 100 # 치료를 염두해둔 최대 체력
+        self.last_damage_time = 0  # 마지막으로 데미지를 받은 시간
+        self.invincibility_time = 2  # 데미지 입지 않는 시간 (2초)
 
     def move(self, command = None):
         if command['move'] == False:
@@ -152,7 +156,29 @@ class Character:
                 self.position[2] += 5
                 
         #center update
-        self.center = np.array([(self.position[0] + self.position[2]) / 2, (self.position[1] + self.position[3]) / 2]) 
+        self.center = np.array([(self.position[0] + self.position[2]) / 2, (self.position[1] + self.position[3]) / 2])
+    
+    def damage(self, hit_damage):                   # 플레이어가 데미지 입는 부분
+        current_time = time.time()
+        
+        # 무적 시간 동안은 데미지를 입지 않음
+        if current_time - self.last_damage_time < self.invincibility_time:
+            return False  # 데미지 무시
+        
+        self.health -= hit_damage
+        self.last_damage_time = current_time
+        
+        if self.health <= 0:
+            print('플레이어 사망')
+            return True             # 게임 종료
+        
+        return False                # 죽기 전까지는 게임 마저 실행
+    
+    def heal(self, heal_point):
+        if(self.health <= self.max_health):
+            self.health += heal_point
+        else:
+            self.health = self.max_health
 
 class Enemy:
     def __init__(self, spawn_position):
@@ -163,6 +189,7 @@ class Enemy:
         self.outline = "#00FF00"
         self.speed = 2  # 적의 이동 속도
         self.last_shot_time = 0  # 마지막 총알 발사 시간 기록
+        self.health = 100 # 적의 체력
     
     
     def update_center(self):
@@ -212,7 +239,7 @@ class Bullet:
         self.position = np.array([position[0]-3, position[1]-3, position[0]+3, position[1]+3])
         self.direction = {'up' : False, 'down' : False, 'left' : False, 'right' : False}
         self.state = None
-        self.outline = "#0000FF"
+        self.outline = "blue"
 
 
         if last_key_pressed == 'up':
@@ -225,7 +252,6 @@ class Bullet:
             self.direction['left'] = True
 
         
-
     def move(self):
         if self.direction['up']:
             self.position[1] -= self.speed
@@ -301,7 +327,7 @@ my_image = Image.new("RGB", (joystick.width, joystick.height)) #도화지!
 my_draw = ImageDraw.Draw(my_image) #그리는 도구!
 
 
-def spawn_random_enemies(num_enemies, width, height):
+def spawn_random_enemies(num_enemies, width, height):               # 적 랜덤으로 생성
     """
     랜덤한 위치에 적을 생성하는 함수
     num_enemies: 생성할 적의 수
@@ -314,6 +340,49 @@ def spawn_random_enemies(num_enemies, width, height):
         new_enemies.append(Enemy((x, y)))
     return new_enemies
 
+def draw_health_bar(draw, position, width, height, health, max_health):     # 체력 바 생성
+    """
+    체력 바를 그리는 함수
+    draw: ImageDraw 객체
+    position: 체력 바의 중심 위치 (x, y)
+    width, height: 체력 바 크기
+    health: 현재 체력
+    max_health: 최대 체력
+    """
+    x, y = position
+    bar_length = width
+    bar_height = height
+
+    # 체력 비율에 따라 바의 길이 계산
+    health_ratio = health / max_health
+    filled_length = int(bar_length * health_ratio)
+
+    # 체력 바 배경
+    draw.rectangle(
+        [x - bar_length // 2, y - bar_height // 2, x + bar_length // 2, y + bar_height // 2],
+        fill=(128, 128, 128),  # 회색 배경
+    )
+
+    # 체력 바
+    draw.rectangle(
+        [x - bar_length // 2, y - bar_height // 2, x - bar_length // 2 + filled_length, y + bar_height // 2],
+        fill=(0, 255, 0),  # 초록색 체력 바
+    )
+    
+# 총알 맞았는지 확인하는 함수
+def check_collision(rect1, rect2):                                          # 총알 맞았는지 확인 함수
+    """
+    두 사각형(rect1, rect2)이 겹치는지 확인하는 함수
+    rect1, rect2: [x1, y1, x2, y2] 형태의 사각형 좌표 리스트
+    return: True if the rectangles overlap, False otherwise
+    """
+    return not (
+        rect1[2] < rect2[0] or  # rect1의 오른쪽이 rect2의 왼쪽보다 왼쪽
+        rect1[0] > rect2[2] or  # rect1의 왼쪽이 rect2의 오른쪽보다 오른쪽
+        rect1[3] < rect2[1] or  # rect1의 아래쪽이 rect2의 위쪽보다 위
+        rect1[1] > rect2[3]     # rect1의 위쪽이 rect2의 아래쪽보다 아래
+    )
+
 
 # 잔상이 남지 않는 코드 & 대각선 이동 가능
 my_circle = Character(joystick.width, joystick.height)
@@ -322,14 +391,12 @@ enemy_1 = Enemy((50, 50))
 enemy_2 = Enemy((200, 200))
 enemy_3 = Enemy((150, 50))
 
-enemys_list = [enemy_1, enemy_2, enemy_3]
-
+enemys_list = [enemy_1, enemy_2, enemy_3]   # 초기 적에 대한 리스트
 enemy_bullets = []  # 적 총알 리스트
+bullets = []        # 내 총알 리스트
 
-bullets = []
 
 last_key_pressed = None  # 마지막으로 누른 키
-
 previous_button_state = True  # 버튼이 눌리지 않은 상태로 시작
 
 
@@ -371,6 +438,7 @@ while True:
 
     my_circle.move(command)
     
+    #사용자 총알 위치 확인
     bullets_to_keep = []
     for bullet in bullets:
         if bullet.is_out_of_bounds(joystick.width, joystick.height):
@@ -383,7 +451,7 @@ while True:
             bullets_to_keep.append(bullet)  # 유효한 총알만 유지
     bullets = bullets_to_keep  # 유효한 총알로 리스트 업데이트
     
-    
+    #적이 총에 맞았다면 즉시 제거 됨
     remaining_enemies = []
     for enemy in enemys_list:
         if enemy.state == 'die':
@@ -413,6 +481,16 @@ while True:
     enemy_bullets_to_keep = []
     for bullet in enemy_bullets:
         bullet.move()
+        
+        # 플레이어와 충돌 확인
+        if check_collision(bullet.position, my_circle.position):
+            print("플레이어가 적의 총알에 맞았습니다!")
+            if my_circle.damage(10):  # 체력 감소 (10만큼 데미지)
+                break                                                   #우선 for문 먼저 나옴
+            bullet.state = 'hit'  # 충돌한 총알 상태를 변경
+            continue  # 해당 총알은 더 이상 처리하지 않도록 다음 총알로 넘어감
+        
+        # 적 총알 위치 확인    
         if bullet.is_out_of_bounds(joystick.width, joystick.height):
             print(f"적 총알 제거: {bullet.position}")
         else:
@@ -421,24 +499,31 @@ while True:
     
     
     # 텍스트 정보 생성
-    num_bullets = len(bullets)  # 총알 개수
+    num_bullets = len(bullets) + len(enemy_bullets)  # 총알 개수
     num_enemies = len(enemys_list)  # 적 개수
     status_text = f"Bullets: {num_bullets}\nEnemies: {num_enemies}"  # 텍스트 내용
-        
+    
+    '''------------------------------------------------------------------ 출력 내용 ----------------------------------------------------------------'''
+    
     #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
-    my_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))         #
-    my_draw.ellipse(tuple(my_circle.position), outline = my_circle.outline, fill = (0, 0, 0))
+    my_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))                                 # 배경
+    my_draw.ellipse(tuple(my_circle.position), outline = my_circle.outline, fill = (0, 0, 0))                               # 플레이어
     
     for enemy in enemys_list:
         if enemy.state != 'die':
-            my_draw.ellipse(tuple(enemy.position), outline = enemy.outline, fill = (255, 0, 0))
+            my_draw.ellipse(tuple(enemy.position), outline = enemy.outline, fill = (255, 0, 0)) # 적 그리기
 
     for bullet in bullets:
         if bullet.state != 'hit':
-            my_draw.rectangle(tuple(bullet.position), outline = bullet.outline, fill = (0, 0, 255))
+            my_draw.rectangle(tuple(bullet.position), outline = bullet.outline, fill = (0, 0, 255)) # 플레이어 총알 그리기
             
     for bullet in enemy_bullets:
         my_draw.rectangle(tuple(bullet.position), outline=bullet.outline, fill=(255, 0, 0))  # 적 총알 그리기
+    
+    
+    # 체력 바 그리기
+    health_bar_position = (int(my_circle.center[0]), int(my_circle.position[1]) - 15)  # 플레이어 상단 위치
+    draw_health_bar(my_draw, health_bar_position, width=80, height=5, health=my_circle.health, max_health=my_circle.max_health)
             
     # 텍스트 출력 (왼쪽 아래)
     text_x = 10
@@ -447,3 +532,13 @@ while True:
 
     #좌표는 동그라미의 왼쪽 위, 오른쪽 아래 점 (x1, y1, x2, y2)
     joystick.disp.image(my_image)
+    
+    '''------------------------------------------------------------------ 게임 종료 체크 -------------------------------------------------------------'''
+    
+    # 체력 0 이하로 루프를 빠져나온 경우
+    if my_circle.health <= 0:
+        break                                                           # <-여기서 while문에서 빠지게 돰
+    
+
+
+print("게임 종료")
