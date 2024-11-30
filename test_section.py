@@ -56,7 +56,6 @@ while True:
     time.sleep(0.03)
 '''
 
-
 import time
 import random
 from colorsys import hsv_to_rgb
@@ -65,6 +64,8 @@ from digitalio import DigitalInOut, Direction
 from PIL import Image, ImageDraw, ImageFont
 from adafruit_rgb_display import st7789
 import numpy as np
+
+from resource_img import player_proto, player_move_proto    #이미지 불러오기
 
 class Joystick:
     def __init__(self):
@@ -121,7 +122,14 @@ class Character:
     def __init__(self, width, height):
         self.appearance = 'circle'
         self.state = None
-        self.position = np.array([width/2 - 20, height/2 - 20, width/2 + 20, height/2 + 20])
+        
+        self.image_move = player_proto
+        
+        image_width, image_height = self.image_move.size
+        
+        self.position = np.array([width/2 - image_width/2, height/2 - image_height/2, 
+                                  width/2 + image_width/2, height/2 + image_height/2])
+        
         # 총알 발사를 위한 캐릭터 중앙 점 추가
         self.center = np.array([(self.position[0] + self.position[2]) / 2, (self.position[1] + self.position[3]) / 2])
         self.outline = "#FFFFFF"
@@ -129,7 +137,7 @@ class Character:
         self.max_health = 100 # 치료를 염두해둔 최대 체력
         self.last_damage_time = 0  # 마지막으로 데미지를 받은 시간
         self.invincibility_time = 2  # 데미지 입지 않는 시간 (2초)
-
+        
     def move(self, command = None):
         if command['move'] == False:
             self.state = None
@@ -179,7 +187,7 @@ class Character:
             self.health += heal_point
         else:
             self.health = self.max_health
-
+                       
 class Enemy:
     def __init__(self, spawn_position):
         self.appearance = 'circle'
@@ -326,6 +334,8 @@ joystick = Joystick()
 my_image = Image.new("RGB", (joystick.width, joystick.height)) #도화지!
 my_draw = ImageDraw.Draw(my_image) #그리는 도구!
 
+character = Character(joystick.width, joystick.height)
+
 
 def spawn_random_enemies(num_enemies, width, height):               # 적 랜덤으로 생성
     """
@@ -399,7 +409,7 @@ bullets = []        # 내 총알 리스트
 last_key_pressed = None  # 마지막으로 누른 키
 previous_button_state = True  # 버튼이 눌리지 않은 상태로 시작
 
-
+'''
 while True:
     command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
     
@@ -503,11 +513,13 @@ while True:
     num_enemies = len(enemys_list)  # 적 개수
     status_text = f"Bullets: {num_bullets}\nEnemies: {num_enemies}"  # 텍스트 내용
     
-    '''------------------------------------------------------------------ 출력 내용 ----------------------------------------------------------------'''
+    
+    # ------------------------------------------------------------------------------------------------------------------------------------------ 출력 부분
+    
     
     #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
     my_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))                                 # 배경
-    my_draw.ellipse(tuple(my_circle.position), outline = my_circle.outline, fill = (0, 0, 0))                               # 플레이어
+    my_draw.ellipse(tuple(my_circle.position), outline = my_circle.outline, fill = (0, 0, 0))
     
     for enemy in enemys_list:
         if enemy.state != 'die':
@@ -533,12 +545,151 @@ while True:
     #좌표는 동그라미의 왼쪽 위, 오른쪽 아래 점 (x1, y1, x2, y2)
     joystick.disp.image(my_image)
     
-    '''------------------------------------------------------------------ 게임 종료 체크 -------------------------------------------------------------'''
+    # ------------------------------------------------------------------------------------------------------------------------------------------ 검사 부분
     
     # 체력 0 이하로 루프를 빠져나온 경우
     if my_circle.health <= 0:
         break                                                           # <-여기서 while문에서 빠지게 돰
     
+'''
+
+
+while True: 
+    command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
+    
+    if not joystick.button_U.value:  # up pressed
+        command['up_pressed'] = True
+        command['move'] = True
+        last_key_pressed = "up"  # 마지막 키 기록
+
+    if not joystick.button_D.value:  # down pressed
+        command['down_pressed'] = True
+        command['move'] = True
+        last_key_pressed = "down"  # 마지막 키 기록
+
+    if not joystick.button_L.value:  # left pressed
+        command['left_pressed'] = True
+        command['move'] = True
+        last_key_pressed = "left"  # 마지막 키 기록
+
+    if not joystick.button_R.value:  # right pressed
+        command['right_pressed'] = True
+        command['move'] = True
+        last_key_pressed = "right"  # 마지막 키 기록
+        
+    current_button_state = joystick.button_A.value  # 현재 버튼 상태
+    
+    if not joystick.button_A.value: # A pressed
+        if not current_button_state and previous_button_state:  # 버튼이 눌림 (이전엔 안 눌렸지만 지금 눌림)
+            print(f"총알 발사! 방향: {last_key_pressed}")
+            bullet = Bullet(character.center, last_key_pressed)
+            bullets.append(bullet)
+
+    # 버튼 상태 갱신
+    previous_button_state = current_button_state
+        
+    character.move(command)
+    
+     #사용자 총알 위치 확인
+    bullets_to_keep = []
+    for bullet in bullets:
+        if bullet.is_out_of_bounds(joystick.width, joystick.height):
+            print(f"총알이 화면 밖으로 나갔습니다: {bullet.position}")
+        elif bullet.state == 'hit':
+            print(f"총알 충돌로 제거: {bullet.position}")
+        else:
+            bullet.collision_check(enemys_list)
+            bullet.move()
+            bullets_to_keep.append(bullet)  # 유효한 총알만 유지
+    bullets = bullets_to_keep  # 유효한 총알로 리스트 업데이트
+    
+    #적이 총에 맞았다면 즉시 제거 됨
+    remaining_enemies = []
+    for enemy in enemys_list:
+        if enemy.state == 'die':
+            print(f"적 제거: {enemy.position}")
+        else:
+            remaining_enemies.append(enemy)  # 유효한 적만 유지
+    enemys_list = remaining_enemies  # 유효한 적으로 리스트 업데이트
+    
+    
+    # 적이 모두 제거되었을 경우 새로운 적 3개 생성
+    if len(enemys_list) == 0:
+        print("적이 모두 제거되었습니다. 새로운 적을 생성합니다!")
+        enemys_list.extend(spawn_random_enemies(3, joystick.width, joystick.height))  # 적 추가
+        
+    
+    # 적이 플레이어를 향해 이동하고 일정 시간마다 총알 발사
+    current_time = time.time()
+    for enemy in enemys_list:
+        if enemy.state == 'alive':
+            enemy.move_towards(character.center, min_distance = 80)  # 플레이어를 향해 이동, 일정 거리 떨어져서 옴
+            if current_time > enemy.last_shot_time + 1:  # 2초마다 발사
+                enemy_bullet = enemy.shoot(character.center)  # 플레이어 위치 전달
+                enemy_bullets.append(enemy_bullet)
+                enemy.last_shot_time = current_time  # 발사 시간 갱신
+    
+    # 적 총알 이동 및 화면 경계 처리       
+    enemy_bullets_to_keep = []
+    for bullet in enemy_bullets:
+        bullet.move()
+        
+        # 플레이어와 충돌 확인
+        if check_collision(bullet.position, character.position):
+            print("플레이어가 적의 총알에 맞았습니다!")
+            if character.damage(10):  # 체력 감소 (10만큼 데미지)
+                break                                                   #우선 for문 먼저 나옴
+            bullet.state = 'hit'  # 충돌한 총알 상태를 변경
+            continue  # 해당 총알은 더 이상 처리하지 않도록 다음 총알로 넘어감
+        
+        # 적 총알 위치 확인    
+        if bullet.is_out_of_bounds(joystick.width, joystick.height):
+            print(f"적 총알 제거: {bullet.position}")
+        else:
+            enemy_bullets_to_keep.append(bullet)
+    enemy_bullets = enemy_bullets_to_keep  # 유효한 총알만 유지
+    
+    
+    # 텍스트 정보 생성
+    num_bullets = len(bullets) + len(enemy_bullets)  # 총알 개수
+    num_enemies = len(enemys_list)  # 적 개수
+    status_text = f"Bullets: {num_bullets}\nEnemies: {num_enemies}"  # 텍스트 내용
+    
+    x1, y1, x2, y2 = character.position
+
+   
+    
+    
+    # --------------------------------------------------------------------
+    
+
+    
+    my_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (0, 255, 255, 100)) # 배경
+    my_image.paste(character.image_move, (int(x1), int(y1)))                              # 플레이어
+    
+    for enemy in enemys_list:
+        if enemy.state != 'die':
+            my_draw.ellipse(tuple(enemy.position), outline = enemy.outline, fill = (255, 0, 0)) # 적 그리기
+
+    for bullet in bullets:
+        if bullet.state != 'hit':
+            my_draw.rectangle(tuple(bullet.position), outline = bullet.outline, fill = (0, 0, 255)) # 플레이어 총알 그리기
+            
+    for bullet in enemy_bullets:
+        my_draw.rectangle(tuple(bullet.position), outline=bullet.outline, fill=(255, 0, 0))  # 적 총알 그리기
+    
+    
+    # 체력 바 그리기
+    health_bar_position = (int(character.center[0]), int(character.position[1]) - 15)  # 플레이어 상단 위치
+    draw_health_bar(my_draw, health_bar_position, width=80, height=5, health=character.health, max_health=character.max_health)
+            
+    # 텍스트 출력 (왼쪽 아래)
+    text_x = 10
+    text_y = joystick.height - 40  # 화면 아래로 40px 위
+    my_draw.text((text_x, text_y), status_text, font=font, fill="#000000")  # 검은색 텍스트
+
+    
+    joystick.disp.image(my_image)
 
 
 print("게임 종료")

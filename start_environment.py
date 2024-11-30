@@ -4,8 +4,6 @@ from PIL import Image, ImageDraw, ImageFont, ImageEnhance  # 밝기 조절
 import time
 
 
-
-
 #게임 시작 전 보여줄 화면
 def game_wait():
     #조이스틱 버튼 값을 받기 위한 클래스
@@ -38,6 +36,8 @@ def game_wait():
     logo_x = (joystick.width - logo_width) // 2
     logo_y = (joystick.height - logo_height) // 2
     logo_image = Image.new("RGB", (joystick.width, joystick.height))
+    
+    
     while True:
         if not (joystick.button_U.value and joystick.button_D.value and 
                 joystick.button_L.value and joystick.button_R.value and 
@@ -114,5 +114,3 @@ def game_wait():
     time.sleep(2)
 
     return 0
-
-game_wait()
