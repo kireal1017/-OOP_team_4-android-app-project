@@ -162,20 +162,24 @@ class Enemy:
         self.center = np.array([(self.position[0] + self.position[2]) / 2, (self.position[1] + self.position[3]) / 2])
         self.outline = "#00FF00"
         self.speed = 2  # 적의 이동 속도
-        
+        self.last_shot_time = 0  # 마지막 총알 발사 시간 기록
+    
+    
     def update_center(self):
         """현재 중심 좌표 업데이트"""
         self.center = np.array([(self.position[0] + self.position[2]) / 2, (self.position[1] + self.position[3]) / 2])
     
-    def move_towards(self, player_position):
+    
+    def move_towards(self, player_position, min_distance):
         """
-        플레이어를 향해 이동하는 함수
+        플레이어를 향해 이동하면서 최소 거리를 유지하는 함수
         player_position: [x, y] 형식의 numpy 배열로 제공
+        min_distance: 플레이어와 적 간 최소 거리
         """
         direction = player_position - self.center  # 플레이어와 적 사이의 방향 벡터
         distance = np.linalg.norm(direction)  # 거리 계산
         
-        if distance > 0:  # 플레이어와 동일한 위치에 있지 않을 경우
+        if distance > min_distance:  # 최소 거리보다 멀 때만 이동
             normalized_direction = direction / distance  # 방향 벡터 정규화
             movement = normalized_direction * self.speed  # 속도에 따라 이동량 계산
             
@@ -187,6 +191,18 @@ class Enemy:
             
             # 중심 좌표 갱신
             self.update_center()
+        
+        
+    def shoot(self, player_position):
+        """
+        플레이어의 위치를 기준으로 총알 발사 방향 결정
+        player_position: [x, y] 형식의 numpy 배열로 제공
+        """
+        if player_position[0] > self.center[0]:  # 플레이어가 적의 오른쪽에 있을 때
+            direction = 'right'
+        else:  # 플레이어가 적의 왼쪽에 있을 때
+            direction = 'left'
+        return EnemyBullet(self.center, direction)
 
 class Bullet:
     def __init__(self, position, last_key_pressed):
@@ -253,7 +269,28 @@ class Bullet:
         """
         x1, y1, x2, y2 = self.position
         return x2 < 0 or x1 > width or y2 < 0 or y1 > height
-    
+
+class EnemyBullet:
+    def __init__(self, position, direction):
+        self.position = np.array([position[0] - 5, position[1] - 5, position[0] + 5, position[1] + 5])
+        self.speed = 5
+        self.direction = direction  # 'left' 또는 'right'
+        self.state = 'active'
+        self.outline = "#FF0000"  # 빨간색 총알
+
+    def move(self):
+        """총알 이동"""
+        if self.direction == 'left':
+            self.position[0] -= self.speed
+            self.position[2] -= self.speed
+        elif self.direction == 'right':
+            self.position[0] += self.speed
+            self.position[2] += self.speed
+
+    def is_out_of_bounds(self, width, height):
+        """화면 경계 밖으로 나갔는지 확인"""
+        x1, y1, x2, y2 = self.position
+        return x2 < 0 or x1 > width
 
 
 font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # 폰트 설정
@@ -286,6 +323,8 @@ enemy_2 = Enemy((200, 200))
 enemy_3 = Enemy((150, 50))
 
 enemys_list = [enemy_1, enemy_2, enemy_3]
+
+enemy_bullets = []  # 적 총알 리스트
 
 bullets = []
 
@@ -345,7 +384,6 @@ while True:
     bullets = bullets_to_keep  # 유효한 총알로 리스트 업데이트
     
     
-    
     remaining_enemies = []
     for enemy in enemys_list:
         if enemy.state == 'die':
@@ -354,15 +392,33 @@ while True:
             remaining_enemies.append(enemy)  # 유효한 적만 유지
     enemys_list = remaining_enemies  # 유효한 적으로 리스트 업데이트
     
+    
     # 적이 모두 제거되었을 경우 새로운 적 3개 생성
     if len(enemys_list) == 0:
         print("적이 모두 제거되었습니다. 새로운 적을 생성합니다!")
         enemys_list.extend(spawn_random_enemies(3, joystick.width, joystick.height))  # 적 추가
         
-    # 적이 플레이어를 향해 이동
+    
+    # 적이 플레이어를 향해 이동하고 일정 시간마다 총알 발사
+    current_time = time.time()
     for enemy in enemys_list:
         if enemy.state == 'alive':
-            enemy.move_towards(my_circle.center)  # 플레이어를 향해 이동
+            enemy.move_towards(my_circle.center, min_distance = 80)  # 플레이어를 향해 이동, 일정 거리 떨어져서 옴
+            if current_time > enemy.last_shot_time + 1:  # 2초마다 발사
+                enemy_bullet = enemy.shoot(my_circle.center)  # 플레이어 위치 전달
+                enemy_bullets.append(enemy_bullet)
+                enemy.last_shot_time = current_time  # 발사 시간 갱신
+    
+    # 적 총알 이동 및 화면 경계 처리       
+    enemy_bullets_to_keep = []
+    for bullet in enemy_bullets:
+        bullet.move()
+        if bullet.is_out_of_bounds(joystick.width, joystick.height):
+            print(f"적 총알 제거: {bullet.position}")
+        else:
+            enemy_bullets_to_keep.append(bullet)
+    enemy_bullets = enemy_bullets_to_keep  # 유효한 총알만 유지
+    
     
     # 텍스트 정보 생성
     num_bullets = len(bullets)  # 총알 개수
@@ -380,6 +436,9 @@ while True:
     for bullet in bullets:
         if bullet.state != 'hit':
             my_draw.rectangle(tuple(bullet.position), outline = bullet.outline, fill = (0, 0, 255))
+            
+    for bullet in enemy_bullets:
+        my_draw.rectangle(tuple(bullet.position), outline=bullet.outline, fill=(255, 0, 0))  # 적 총알 그리기
             
     # 텍스트 출력 (왼쪽 아래)
     text_x = 10
