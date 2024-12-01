@@ -65,7 +65,7 @@ from PIL import Image, ImageDraw, ImageFont
 from adafruit_rgb_display import st7789
 import numpy as np
 
-from resource_img import player_proto, player_move_proto    #이미지 불러오기
+#from resource_img
 
 class Joystick:
     def __init__(self):
@@ -123,7 +123,7 @@ class Character:
         self.appearance = 'circle'
         self.state = None
         
-        self.image_move = Image.open('')
+        self.image_move = Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_gif.gif')
         
         image_width, image_height = self.image_move.size
         
@@ -136,7 +136,7 @@ class Character:
         self.health = 100 # 내 체력, 초기 체력은 100
         self.max_health = 100 # 치료를 염두해둔 최대 체력
         self.last_damage_time = 0  # 마지막으로 데미지를 받은 시간
-        self.invincibility_time = 2  # 데미지 입지 않는 시간 (2초)
+        self.invincibility_time = 2  # 데미지 입지 않는 무적 타임 (2초)
         
     def move(self, command = None):
         if command['move'] == False:
