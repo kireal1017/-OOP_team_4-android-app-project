@@ -26,6 +26,7 @@ character_width, character_height = my_circle.character_source.size
 center_x = joystick.width // 2 - character_width // 2
 center_y = joystick.height // 2 - character_height // 2
 
+game_wait() # 게임 시작
 
 while True:
     command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}

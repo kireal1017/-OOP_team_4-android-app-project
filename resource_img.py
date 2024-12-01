@@ -1,13 +1,14 @@
 from collections import namedtuple
 from PIL import Image
 
-absolute_path = '/home/j9077/working_directory/'
+absolute_path = '/home/j9077/working_directory/' #혹시 모를 절대경로
+
+
 
 morning_background = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/background/background_evening.png')
 sunset_background = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/background/background_sunset.png')
 midnight_background = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/background/background_midnight.png')
-
-start_logo = Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/start_logo_120x100.png')
+start_logo = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/start_logo_120x100.png')
 
 CharacterSprites = namedtuple('CharacterSprites', ['wait', 'move', 'attack', 'hit', 'die']) #namedtuple로 일일히 변수를 만들기 보단 구조체로 묶음
 
