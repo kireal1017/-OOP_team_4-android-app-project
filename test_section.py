@@ -123,7 +123,7 @@ class Character:
         self.appearance = 'circle'
         self.state = None
         
-        self.image_move = player_proto
+        self.image_move = Image.open('')
         
         image_width, image_height = self.image_move.size
         

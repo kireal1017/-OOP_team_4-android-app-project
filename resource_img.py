@@ -11,13 +11,13 @@ start_logo = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_sour
 
 player_sprites = namedtuple('player', ['wait', 'move', 'attack', 'hit', 'die', 'jump']) #namedtuple로 일일히 변수를 만들기 보단 구조체로 묶음
 # 플레이어
-player = player_sprites(
+player_res = player_sprites(
     wait = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Idle.png'),
-    move = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Run.png'),
+    move = Image.open(absolute_path +'esw_raspberryPi_game_project/image_source/character/player/Run.png'),
     attack = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Shot.png'),
     hit = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Hurt.png'),
     die = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Dead.png'),
-    jump = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Jump.png')
+    jump = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Jump.png'),
 )
 
 monster_sprites = namedtuple('monster', ['wait', 'move', 'attack', 'hit', 'die'])
@@ -76,7 +76,7 @@ ancient_navy = monster_sprites(
     die = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/enemy_boss/bossLV3/Death.png'),
 )
 
-
+#총알 종류
 bullet_sprites = namedtuple('bullet', ['player', 'fisherman', 'warrier'])
 
 bullet = bullet_sprites(
