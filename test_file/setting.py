@@ -59,21 +59,13 @@ class Joystick:
 
 '''-------------------------------------------------- 하드웨어 세팅 부분 --------------------------------------------------'''
 
-class Player:
-    def __init__(self, width, height, character_size_x, character_size_y):
-        
+class Character:
+    def __init__(self, width, height):
+        self.character_source = Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_80.png')
         self.state = None
         self.position = np.array([width/2 - 20, height/2 - 20, width/2 + 20, height/2 + 20])
         self.jump_state = False
         self.crawl_state = False
-        
-        #캐릭터 초기 위치
-        self.character_x = self.width // 2 - character_size_x // 2
-        self.character_y = self.height // 2 - character_size_y // 2
-        
-        #캐릭터와 벽의 최소 거리
-        self.move_limit_x = 50
-        self.move_limit_y = 30
 
 
     def move(self, command = None):

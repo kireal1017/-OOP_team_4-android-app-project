@@ -9,7 +9,6 @@ sunset_background = Image.open(absolute_path + 'esw_raspberryPi_game_project/ima
 midnight_background = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/background/background_midnight.png')
 start_logo = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/start_logo_120x100.png')
 
-'''
 player_sprites = namedtuple('player', ['wait', 'move', 'attack', 'hit', 'die', 'jump']) #namedtuple로 일일히 변수를 만들기 보단 구조체로 묶음
 # 플레이어
 player_res = player_sprites(
@@ -87,13 +86,3 @@ bullet = bullet_sprites(
     fisherman = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/enemy_boss/bossLV2/Projectile.png'),
     warrier = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/enemy_boss/bossLV3/Arrow1.png')
 )
-
-'''
-
-player_move = [
-    Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_player/player1.png').convert("RGBA"),
-    Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_player/player2.png').convert("RGBA"),
-    Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_player/player3.png').convert("RGBA"),
-    Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_player/player4.png').convert("RGBA"),
-    Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_player/player5.png').convert("RGBA"),
-]
