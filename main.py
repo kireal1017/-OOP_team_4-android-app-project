@@ -1,104 +1,64 @@
-from setting import Joystick, Character, BackgroundScroller
+from setting import *
 from resource_img import morning_background, sunset_background, midnight_background
 from PIL import Image
 import time
 import random
 
-from start_environment import game_wait #게임 시작화면 불러온 동시에 게임 시작함
+#from start_environment import game_wait #게임 시작화면 불러온 동시에 게임 시작함
 
 #조이스틱, 캐릭터 초기화
 joystick = Joystick()
-my_circle = Character(joystick.width, joystick.height)
+player = Player(width = joystick.width, 
+                height = joystick.height, 
+                character_size_x = 96, 
+                character_size_y = 96) #캐릭터 사이즈 96 x 96
 
 
 # 배경 클래스 초기화
 scroller = BackgroundScroller(morning_background, joystick.width, joystick.height)
-background = sunset_background.crop((0, 0, joystick.width, joystick.height))
 
 #디스플레이 초기화 및 출력
-my_image = Image.new("RGB", (joystick.width, joystick.height)) # 디스플레이 초기화
+display = Image.new("RGB", (joystick.width, joystick.height)) # 디스플레이 초기화
 
-bg_width, bg_height = background.size   # 배경 이미지의 원래 크기 가져오기
-bg_offset = [0, 0]                      # 배경 이미지 슬라이드 위치 저장
-
-# 캐릭터 중앙 위치 계산
-character_width, character_height = my_circle.character_source.size
-center_x = joystick.width // 2 - character_width // 2
-center_y = joystick.height // 2 - character_height // 2
-
-game_wait() # 게임 시작
+#game_wait() # 게임 시작
 
 while True:
-    command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
+    player.command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
     
     if not joystick.button_U.value:  # up pressed
-        if not joystick.button_L.value:
-            print("왼쪽 점프")
-        elif not joystick.button_R.value:
-            print("오른쪽 점프")
-            
-        command['up_pressed'] = True
-        command['move'] = True
+        player.command['up_pressed'] = True
+        player.command['move'] = True
+        #print("up")
 
     if not joystick.button_D.value:  # down pressed
-        #scroller.leftScroll(step = 3) # 왼쪽 이동                   <- 반대로 3 + 5가 되어서 더 빨리 이동함
-        if not joystick.button_L.value:
-            print("왼쪽 기어가기")
-        elif not joystick.button_R.value:
-            print("오른쪽 기어가기")
-            
-        command['down_pressed'] = True
-        command['move'] = True
+        player.command['down_pressed'] = True
+        player.command['move'] = True
+        print("d")
 
     if not joystick.button_L.value:  # left pressed
-        command['left_pressed'] = True
-        command['move'] = True
-        scroller.leftScroll(step = 5) # 왼쪽 배경 이동
+        player.command['left_pressed'] = True
+        player.command['move'] = True
+        print("l")
 
 
     if not joystick.button_R.value:  # right pressed
-        command['right_pressed'] = True
-        command['move'] = True
-        scroller.rightScroll(step = 5) # 오른쪽 배경 이동
-        
+        player.command['right_pressed'] = True
+        player.command['move'] = True
+        print("r")
+
     if not joystick.button_A.value:
-        command['button_A_pressed'] = True
-        
+        player.command['button_A_pressed'] = True
+    
+    # print(player.character_x, player.character_y)
+    
+    
     cropped_background = scroller.get_cropped_image() # 현재 스크롤 상태에 맞게 이미지를 가져옴
-    joystick.disp.image(cropped_background)           # 배경 출력
+    display.paste(cropped_background, (0, 0))           # 배경 출력
     
-     
-    # 배경 위에 캐릭터를 중앙에 배치
-    combined_image = Image.new("RGB", (joystick.width, joystick.height))
-    combined_image.paste(cropped_background, (0, 0))  # 배경 추가
-        
-    cropped_background = scroller.get_cropped_image()  # 현재 스크롤 상태에 맞게 이미지를 가져옴
-    combined_image.paste(cropped_background, (0, 0))  # 배경 추가 (덮어쓰기 아님)
+    display.paste(player.show_player_motion, (player.character_x, player.character_y), player.show_player_motion)  # 알파 채널을 고려하여 프레임을 배경에 합성
     
-
-    # 캐릭터를 중앙에 유지
-    combined_image.paste(my_circle.character_source, (center_x, center_y), mask=my_circle.character_source)
-
     # 배경 출력
-    joystick.disp.image(combined_image)
+    joystick.disp.image(display)
 
     # 프레임 딜레이
     time.sleep(0.01)  # 짧은 시간 딜레이
-
-'''
-    cropped_background = scroller.get_cropped_image() # 현재 스크롤 상태에 맞게 이미지를 가져옴
-    joystick.disp.image(cropped_background)
-    
-    # 배경 위에 캐릭터를 중앙에 배치
-    combined_image = Image.new("RGB", (joystick.width, joystick.height))
-    combined_image.paste(cropped_background, (0, 0))  # 배경 추가
-    
-    combined_image.paste(my_circle.character_source,(center_x, center_y)) #캐릭터 출력 
-    
-    # 배경 출력
-    joystick.disp.image(combined_image)
-    
-    time.sleep(0.01) #딜레이
-'''
-
-    

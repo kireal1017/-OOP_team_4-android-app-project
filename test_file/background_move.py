@@ -29,6 +29,8 @@ combined_image = Image.new("RGB", (joystick.width, joystick.height))  # 디스�
 character_x = joystick.width // 2 - my_circle.character_source.size[0] // 2
 character_y = joystick.height // 2 - my_circle.character_source.size[1] // 2
 
+print("jostick", joystick.width, joystick.height)
+
 # 캐릭터와 벽의 최소 거리 (버퍼)
 buffer_x = 50
 buffer_y = 30
@@ -66,7 +68,7 @@ while True:
     combined_image.paste(cropped_background, (0, 0))  # 배경 갱신
 
     # 캐릭터 업데이트, 배경 위에 애니메이션 프레임 중앙에 그리기
-    combined_image.paste(frame, (character_x, character_y), frame)  # 알파 채널을 고려하여 프레임을 배경에 합성
+    combined_image.paste(frame, (character_x, character_y), frame)
 
     # 디스플레이 출력
     joystick.disp.image(combined_image)

@@ -6,6 +6,8 @@ from digitalio import DigitalInOut, Direction
 from PIL import Image
 from adafruit_rgb_display import st7789
 
+from resource_img import *
+
 class Joystick:
     def __init__(self):
         self.cs_pin = DigitalInOut(board.CE0)
@@ -63,69 +65,75 @@ class Player:
     def __init__(self, width, height, character_size_x, character_size_y):
         
         self.state = None
-        self.position = np.array([width/2 - 20, height/2 - 20, width/2 + 20, height/2 + 20])
-        self.jump_state = False
-        self.crawl_state = False
+        #self.position = np.array([width/2 - 20, height/2 - 20, width/2 + 20, height/2 + 20])
         
         #캐릭터 초기 위치
-        self.character_x = self.width // 2 - character_size_x // 2
-        self.character_y = self.height // 2 - character_size_y // 2
+        self.character_x = 240 // 2 - character_size_x // 2
+        self.character_y = 240 // 2 - character_size_y // 2
+        
         
         #캐릭터와 벽의 최소 거리
         self.move_limit_x = 50
         self.move_limit_y = 30
-
-
-    def move(self, command = None):
-        if command['move'] == False:
-            self.state = None
         
-        else:
-            self.state = 'move'
+        #캐릭터 프레임 길이와 몇번째 프레임에 있는지 
+        self.frame_index = 0
+        
+        #실제로 플레이어 모션을 보여줄 이미지
+        self.show_player_motion = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/playerWait.png').convert("RGBA")       # 이미지 참조할 것
+        self.player_move_frames = player_move
+        
+        # 캐릭터 이동 관련 커맨드
+        self.command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
+        
+        self.health = 100            # 내 체력
+        self.max_health = 100        # 치료를 염두해둔 최대 체력
+        self.last_damage_time = 0    # 마지막으로 데미지 받은 시간
+        self.invincibility_time = 2  # 데미지 입지 않는 무적 타임 (2초)
+        
 
-            if command['up_pressed']:
-                if self.jump_state == True or self.crawl_state == True:
-                    print("점프 또는 기어가는 중")
-                else:
-                    self.jump_state = True
-                    print("점프 실행")
-                    self.jump_state = False
+
+    def move(self, command):
+        if command['move'] == False:
+            if command['up_pressed']:       # 위로 이동
+                if self.character_y > self.move_limit_y:    #플레이어가 상단 리미트 높이를 벗어나지 않도록 이동 
+                    self.character_y -= 5
+                print("up")
                     
-                self.position[1] -= 5
-                self.position[3] -= 5
+                #self.position[1] -= 5
+                #self.position[3] -= 5
 
-            if command['down_pressed']:
-                if self.jump_state == True:
-                    print("점프 중")
-                else:
-                    self.crawl_state = True
-                    print("기어가는 중")
-                    self.crawl_state = False
+            if command['down_pressed']:     # 아래 이동
+                self.character_y += 5
                 
-                self.position[1] += 5
-                self.position[3] += 5
+                # self.position[1] += 5
+                # self.position[3] += 5
 
-            if command['left_pressed']:
-                self.position[0] -= 5
-                self.position[2] -= 5
+            if command['left_pressed']:     # 왼쪽 이동
+                self.show_player_motion = self.player_move_frames.transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
+                self.frame_index = (self.frame_index + 1) % len(self.player_move_frames) #이건 나중에 파일 참조 할 것
+                if self.character_x > self.move_limit_x:
+                    self.character_x -= 5
+                # self.position[0] -= 5
+                # self.position[2] -= 5
                 
-            if command['right_pressed']:
-                self.position[0] += 5
-                self.position[2] += 5
+            if command['right_pressed']:    # 오른쪽 이동
+                self.show_player_motion = self.player_move_frames
+                self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)
+                if self.character_x < self.move_limit_x - self.character_x:
+                    self.character_x += 5
+                
+                # self.position[0] += 5
+                # self.position[2] += 5
             
-            if command == 'button_A_pressed':
+            if command['button_A_pressed']:
                 print("버튼 A 입력")
             
-            if command == 'button_B_pressed':
+            if command['button_B_pressed']:
                 print("버튼 B 입력")
-            
-            
-            
-            print(self.position)
-            if self.position[0] < 0 or self.position[2] > 240:
-                print("캐릭터가 가로 경계 벗어남")
-            if self.position[1] < 0 or self.position[3] > 240:
-                print("캐릭터가 세로 경계 벗어남")
+        else:
+            self.show_player_motion = player_wait
+
 
 '''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
 
