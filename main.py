@@ -176,9 +176,17 @@ class BackgroundScroller:
 
 def player_bullet_fire():    
     if not current_button_state and player.previous_button_state:  # 버튼이 눌림 (이전엔 안 눌렸지만 지금 눌림)
+        display.paste(cropped_background, (0, 0))                  # 배경 출력
         print("총알 발사")
-        for i in range(4):
-            display.paste(player_shoot[i], (player.character_x, player.character_y), player_shoot[i])
+        for i in range(len(player_shoot)):
+            if player.last_key_pressed == 'right':
+                display.paste(player_shoot[i], 
+                              (player.character_x, player.character_y), 
+                              player_shoot[i])
+            else:                                                 # 왼쪽을 바라보고 있었으면 반대로 뒤집어서 보이기
+                display.paste(player_shoot[i].transpose(Image.FLIP_LEFT_RIGHT), 
+                              (player.character_x, player.character_y), 
+                              player_shoot[i].transpose(Image.FLIP_LEFT_RIGHT))
             joystick.disp.image(display)
             time.sleep(0.01)
         
