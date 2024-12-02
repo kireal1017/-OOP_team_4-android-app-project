@@ -94,45 +94,50 @@ class Player:
 
 
     def move(self, command):
-        if command['move'] == False:
-            if command['up_pressed']:       # 위로 이동
-                if self.character_y > self.move_limit_y:    #플레이어가 상단 리미트 높이를 벗어나지 않도록 이동 
-                    self.character_y -= 5
-                print("up")
-                    
-                #self.position[1] -= 5
-                #self.position[3] -= 5
+        print("실행중")
+        
+        if command['up']:       # 위로 이동
+            if self.character_y > self.move_limit_y:    #플레이어가 상단 리미트 높이를 벗어나지 않도록 이동 
+                self.character_y -= 5
+            print("up")
+                
+            #self.position[1] -= 5
+            #self.position[3] -= 5
 
-            if command['down_pressed']:     # 아래 이동
-                self.character_y += 5
-                
-                # self.position[1] += 5
-                # self.position[3] += 5
-
-            if command['left_pressed']:     # 왼쪽 이동
-                self.show_player_motion = self.player_move_frames.transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
-                self.frame_index = (self.frame_index + 1) % len(self.player_move_frames) #이건 나중에 파일 참조 할 것
-                if self.character_x > self.move_limit_x:
-                    self.character_x -= 5
-                # self.position[0] -= 5
-                # self.position[2] -= 5
-                
-            if command['right_pressed']:    # 오른쪽 이동
-                self.show_player_motion = self.player_move_frames
-                self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)
-                if self.character_x < self.move_limit_x - self.character_x:
-                    self.character_x += 5
-                
-                # self.position[0] += 5
-                # self.position[2] += 5
+        elif command['down']:     # 아래 이동
+            self.character_y += 5
             
+            # self.position[1] += 5
+            # self.position[3] += 5
+
+        elif command['left']:     # 왼쪽 이동
+            self.show_player_motion = self.player_move_frames.transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
+            self.frame_index = (self.frame_index + 1) % len(self.player_move_frames) #이건 나중에 파일 참조 할 것
+            if self.character_x > self.move_limit_x:
+                self.character_x -= 5
+            # self.position[0] -= 5
+            # self.position[2] -= 5
+            
+        elif command['right']:    # 오른쪽 이동
+            self.show_player_motion = self.player_move_frames
+            self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)
+            if self.character_x < self.move_limit_x - self.character_x:
+                self.character_x += 5
+            
+            # self.position[0] += 5
+            # self.position[2] += 5
+            
+        else:
+            self.show_player_motion = player_wait
+                
+            '''
             if command['button_A_pressed']:
                 print("버튼 A 입력")
             
             if command['button_B_pressed']:
                 print("버튼 B 입력")
-        else:
-            self.show_player_motion = player_wait
+            ''' 
+                
 
 
 '''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''

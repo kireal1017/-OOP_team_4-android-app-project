@@ -3,7 +3,6 @@ from PIL import Image
 
 absolute_path = '/home/j9077/working_directory/' #혹시 모를 절대경로, 이유는 모르겠으나 상대경로를 쓰면 에러가 발생함
 
-
 morning_background = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/background/background_evening.png')
 sunset_background = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/background/background_sunset.png')
 midnight_background = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/background/background_midnight.png')
@@ -90,10 +89,13 @@ bullet = bullet_sprites(
 
 '''
 
+player_wait = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/playerWait.png').convert("RGBA")
+
 player_move = [
-    Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_player/player1.png').convert("RGBA"),
-    Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_player/player2.png').convert("RGBA"),
-    Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_player/player3.png').convert("RGBA"),
-    Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_player/player4.png').convert("RGBA"),
-    Image.open('/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/test_player/player5.png').convert("RGBA"),
+    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player1.png').convert("RGBA"),
+    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player2.png').convert("RGBA"),
+    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player3.png').convert("RGBA"),
+    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player4.png').convert("RGBA"),
+    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player5.png').convert("RGBA"),
 ]
+
