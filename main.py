@@ -65,6 +65,46 @@ class Joystick:
 
 '''-------------------------------------------------- 하드웨어 세팅 부분 --------------------------------------------------'''
 
+class BackgroundScroller:
+    def __init__(self, image, display_width, display_height):
+        self.image = image
+        self.display_width = display_width
+        self.display_height = display_height
+        self.scroll_position = 0  # 현재 스크롤 위치
+        self.image_width = image.width
+        self.maxplayerRange = 3
+        
+        # 바다로 들어가지 않도록 y 이동 범위 지정
+        self.y_low_limit = 142
+        self.y_limit_morning = 72
+        self.y_limit_sunset = 97
+        self.y_limit_midnight = 62
+
+    def rightScroll(self, step):
+        """배경 이미지를 step만큼 이동"""
+        if self.scroll_position >= (self.image_width - self.display_width - self.maxplayerRange): #오른쪽 끝에 도달했을 경우
+            step = 0 #이 이상으로는 움직이지 않게 끔
+        
+        print(self.scroll_position)                 #테스트 출력
+        print(self.image_width - self.display_width - self.maxplayerRange)
+        self.scroll_position += step
+    
+    def leftScroll(self, step):
+        if self.scroll_position <= self.maxplayerRange: # 왼쪽 끝에 도달했을 경우
+            step = 0
+        
+        print(self.scroll_position)                 #테스트 출력
+        self.scroll_position -= step
+        
+
+    def get_cropped_image(self):
+        """현재 스크롤 위치에 맞게 자른 이미지를 반환"""
+        left = self.scroll_position
+        right = self.scroll_position + self.display_width
+        return self.image.crop((left, 0, right, self.display_height))
+
+'''-------------------------------------------------- 배경 세팅 --------------------------------------------------'''
+
 class Player:
     def __init__(self, width, height, character_size_x, character_size_y):
         self.state = None
@@ -187,50 +227,59 @@ class Player:
              self.character_y + bar_height // 2 + y_calibrate],
             fill = fill_color
         )
-        
-                                    
-            
-'''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
 
-class BackgroundScroller:
-    def __init__(self, image, display_width, display_height):
-        self.image = image
-        self.display_width = display_width
-        self.display_height = display_height
-        self.scroll_position = 0  # 현재 스크롤 위치
-        self.image_width = image.width
-        self.maxplayerRange = 3
-        
-        # 바다로 들어가지 않도록 y 이동 범위 지정
-        self.y_low_limit = 142
-        self.y_limit_morning = 72
-        self.y_limit_sunset = 97
-        self.y_limit_midnight = 62
-
-    def rightScroll(self, step):
-        """배경 이미지를 step만큼 이동"""
-        if self.scroll_position >= (self.image_width - self.display_width - self.maxplayerRange): #오른쪽 끝에 도달했을 경우
-            step = 0 #이 이상으로는 움직이지 않게 끔
-        
-        print(self.scroll_position)                 #테스트 출력
-        print(self.image_width - self.display_width - self.maxplayerRange)
-        self.scroll_position += step
+class Enemy:
+    def __init__(self, spawn_position):
+        self.appearance = 'circle'
+        self.state = 'alive'
+        self.position = np.array([spawn_position[0] - 25, spawn_position[1] - 25, spawn_position[0] + 25, spawn_position[1] + 25])
+        self.center = np.array([(self.position[0] + self.position[2]) / 2, (self.position[1] + self.position[3]) / 2])
+ 
+        self.speed = 2  # 적의 이동 속도
+        self.last_shot_time = 0  # 마지막 총알 발사 시간 기록
+        self.health = 100 # 적의 체력
     
-    def leftScroll(self, step):
-        if self.scroll_position <= self.maxplayerRange: # 왼쪽 끝에 도달했을 경우
-            step = 0
+    
+    def update_center(self):
+        """현재 중심 좌표 업데이트"""
+        self.center = np.array([(self.position[0] + self.position[2]) / 2, (self.position[1] + self.position[3]) / 2])
+    
+    
+    def move_towards(self, player_position, min_distance):
+        """
+        플레이어를 향해 이동하면서 최소 거리를 유지하는 함수
+        player_position: [x, y] 형식의 numpy 배열로 제공
+        min_distance: 플레이어와 적 간 최소 거리
+        """
+        direction = player_position - self.center  # 플레이어와 적 사이의 방향 벡터
+        distance = np.linalg.norm(direction)  # 거리 계산
         
-        print(self.scroll_position)                 #테스트 출력
-        self.scroll_position -= step
+        if distance > min_distance:  # 최소 거리보다 멀 때만 이동
+            normalized_direction = direction / distance  # 방향 벡터 정규화
+            movement = normalized_direction * self.speed  # 속도에 따라 이동량 계산
+            
+            # 적의 위치 업데이트
+            self.position[0] += movement[0]
+            self.position[2] += movement[0]
+            self.position[1] += movement[1]
+            self.position[3] += movement[1]
+            
+            # 중심 좌표 갱신
+            self.update_center()
         
-
-    def get_cropped_image(self):
-        """현재 스크롤 위치에 맞게 자른 이미지를 반환"""
-        left = self.scroll_position
-        right = self.scroll_position + self.display_width
-        return self.image.crop((left, 0, right, self.display_height))
-
-'''-------------------------------------------------- 배경 세팅 --------------------------------------------------'''
+        
+    def shoot(self, player_position):
+        """
+        플레이어의 위치를 기준으로 총알 발사 방향 결정
+        player_position: [x, y] 형식의 numpy 배열로 제공
+        """
+        if player_position[0] > self.center[0]:  # 플레이어가 적의 오른쪽에 있을 때
+            direction = 'right'
+        else:  # 플레이어가 적의 왼쪽에 있을 때
+            direction = 'left'
+        return EnemyBullet(self.center, direction)       
+    
+'''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
 
 class Bullet:
     def __init__(self, last_key_pressed):
@@ -294,8 +343,51 @@ class Bullet:
             return True
         return False
 
+class EnemyBullet:
+    def __init__(self, position, direction):
+        self.position = np.array([position[0] - 5, position[1] - 5, position[0] + 5, position[1] + 5])
+        self.speed = 5
+        self.direction = direction  # 'left' 또는 'right'
+        self.state = 'active'
+        self.outline = "#FF0000"  # 빨간색 총알
 
-def player_bullet_fire():    
+    def move(self):
+        """총알 이동"""
+        if self.direction == 'left':
+            self.position[0] -= self.speed
+            self.position[2] -= self.speed
+        elif self.direction == 'right':
+            self.position[0] += self.speed
+            self.position[2] += self.speed
+
+    def is_out_of_bounds(self, width, height):
+        """화면 경계 밖으로 나갔는지 확인"""
+        x1, y1, x2, y2 = self.position
+        return x2 < 0 or x1 > width
+
+'''-------------------------------------------------- 총알 세팅 --------------------------------------------------'''
+
+# --------------------------------------------------------------------------- 게임 시작 전 설정 사항
+            
+bullets = [] # 게임 시작 전 bullets 초기화
+
+#조이스틱, 캐릭터 초기화
+joystick = Joystick()
+player = Player(width = joystick.width, 
+                height = joystick.height, 
+                character_size_x = 96, 
+                character_size_y = 96) #캐릭터 사이즈 96 x 96
+
+scroller = BackgroundScroller(midnight_background, joystick.width, joystick.height) # 배경 클래스 초기화
+display = Image.new("RGB", (joystick.width, joystick.height)) # 디스플레이 초기화
+
+draw_bar = ImageDraw.Draw(display)                                  # 체력 바 및 경고창을 그리기 위한 draw
+
+font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # 폰트 설정
+font = ImageFont.truetype(font_path, 17)                            # 폰트 크기
+
+
+def player_bullet_fire():    #플레이어 총알 발사
     if not current_button_state and player.previous_button_state:  # 버튼이 눌림 (연속적으로 눌린 상태를 읽는 것을 방지)
         for i in range(len(player_shoot)):
             if player.last_key_pressed == 'right':
@@ -312,23 +404,6 @@ def player_bullet_fire():
         print(f"총알 발사, 방향: {player.last_key_pressed}")
         bullet = Bullet(player.last_key_pressed)
         bullets.append(bullet)
-
-# --------------------------------------------------------------------------- 게임 시작 전 설정 사항
-            
-bullets = [] # 게임 시작 전 bullets 초기화
-
-#조이스틱, 캐릭터 초기화
-joystick = Joystick()
-player = Player(width = joystick.width, 
-                height = joystick.height, 
-                character_size_x = 96, 
-                character_size_y = 96) #캐릭터 사이즈 96 x 96
-
-scroller = BackgroundScroller(midnight_background, joystick.width, joystick.height) # 배경 클래스 초기화
-display = Image.new("RGB", (joystick.width, joystick.height)) # 디스플레이 초기화
-
-draw_bar = ImageDraw.Draw(display)                                #체력 바를 그리기 위한 draw
-
 
 
 

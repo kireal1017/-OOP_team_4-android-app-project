@@ -89,20 +89,23 @@ bullet = bullet_sprites(
 
 '''
 
-player_wait = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/playerWait.png').convert("RGBA")
+player_path = 'esw_raspberryPi_game_project/image_source/character/player/'
+
+player_wait = Image.open(absolute_path + player_path + 'playerWait.png').convert("RGBA")
+
 
 player_move = [
-    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player1.png').convert("RGBA"),
-    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player2.png').convert("RGBA"),
-    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player3.png').convert("RGBA"),
-    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player4.png').convert("RGBA"),
-    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player5.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player1.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player2.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player3.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player4.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player5.png').convert("RGBA"),
 ]
 
 player_shoot = [
-    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player_shoot1.png').convert("RGBA"),
-    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player_shoot2.png').convert("RGBA"),
-    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player_shoot3.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player_shoot1.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player_shoot2.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player_shoot3.png').convert("RGBA"),
     player_wait
 ]
 
@@ -110,3 +113,4 @@ player_bullet = [
     Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/bullet_asset/player_bullet1.png').convert("RGBA"),
     Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/bullet_asset/player_bullet2.png').convert("RGBA")
 ]
+
