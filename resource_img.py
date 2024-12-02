@@ -99,3 +99,9 @@ player_move = [
     Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player5.png').convert("RGBA"),
 ]
 
+player_shoot = [
+    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player_shoot1.png').convert("RGBA"),
+    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player_shoot2.png').convert("RGBA"),
+    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player_shoot3.png').convert("RGBA"),
+    player_wait
+]

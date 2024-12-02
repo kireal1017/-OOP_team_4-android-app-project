@@ -84,13 +84,12 @@ class Player:
         self.frame_index = 0
         
         #실제로 플레이어 모션을 보여줄 이미지
-        self.show_player_motion = player_wait       # 이미지 참조할 것
-        self.player_move_frames = player_move
+        self.show_player_motion = player_wait       # 기본으로 보이는건 대기 이미지
+        self.player_move_frames = player_move       # 움직이기
         
         # 캐릭터 이동 관련 커맨드
         self.command = {'move': False, 'up_pressed': False , 'down_pressed': False, 
-                        'left_pressed': False, 'right_pressed': False, 
-                        'button_A': False, 'button_B' : False}
+                        'left_pressed': False, 'right_pressed': False}
         
         self.health = 100            # 내 체력
         self.max_health = 100        # 치료를 염두해둔 최대 체력
@@ -111,6 +110,7 @@ class Player:
             if command['up_pressed']:       # 위로 이동
                 if self.character_y > self.move_limit_y:    #플레이어가 상단 리미트 높이를 벗어나지 않도록 이동 
                     self.character_y -= 5
+                        
 
             if command['down_pressed']:     # 아래 이동
                 self.character_y += 5
@@ -130,7 +130,7 @@ class Player:
                 if self.character_x < self.move_limit_x - self.character_x:
                     self.character_x += 5
                 self.last_key_pressed = 'right'
-                    
+                                    
             
 '''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
 
@@ -174,6 +174,15 @@ class BackgroundScroller:
 
 '''-------------------------------------------------- 배경 세팅 --------------------------------------------------'''
 
+def player_bullet_fire():    
+    if not current_button_state and player.previous_button_state:  # 버튼이 눌림 (이전엔 안 눌렸지만 지금 눌림)
+        print("총알 발사")
+        for i in range(4):
+            display.paste(player_shoot[i], (player.character_x, player.character_y), player_shoot[i])
+            joystick.disp.image(display)
+            time.sleep(0.01)
+        
+
 #game_wait() # 게임 시작
 
 #조이스틱, 캐릭터 초기화
@@ -205,19 +214,24 @@ while True:
         if player.character_x < player.move_limit_x:
             scroller.leftScroll(step = 5)
 
-
     if not joystick.button_R.value:  # right pressed
         command['right_pressed'] = True
         command['move'] = True
         if player.character_x > player.character_x -  player.move_limit_x:
             scroller.rightScroll(step = 5)
+    
+    current_button_state = joystick.button_A.value  # 현재 버튼 상태
+    if not joystick.button_A.value: # A pressed
+        player_bullet_fire()            
+    # 버튼 상태 갱신
+    player.previous_button_state = current_button_state
+    
+    
             
-    print(player.character_y)
 
-    if not joystick.button_A.value:
-        player.command['button_A_pressed'] = True
-        
     player.move(command)
+    
+    
     
     # print(player.character_x, player.character_y)
     
@@ -225,10 +239,11 @@ while True:
     cropped_background = scroller.get_cropped_image()   # 현재 스크롤 상태에 맞게 이미지를 가져옴
     display.paste(cropped_background, (0, 0))           # 배경 출력
     
-    display.paste(player.show_player_motion, (player.character_x, player.character_y), player.show_player_motion)  # 알파 채널을 고려하여 프레임을 배경에 합성
     
+    
+    display.paste(player.show_player_motion, (player.character_x, player.character_y), player.show_player_motion)  # 알파 채널을 고려하여 프레임을 배경에 합성
     # 배경 출력
     joystick.disp.image(display)
 
     # 프레임 딜레이
-    time.sleep(0.01)  # 짧은 시간 딜레이
+    time.sleep(0.01)  # 짧은 시간 딜레이    
