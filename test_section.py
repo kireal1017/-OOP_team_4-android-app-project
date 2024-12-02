@@ -117,6 +117,42 @@ class Joystick:
         # Make sure to create image with mode 'RGB' for color.
         self.width = self.disp.width
         self.height = self.disp.height
+
+class Animation:
+    def __init__(self, sheet, frame_width, frame_height, display_width, display_height):
+        self.sheet = Image.open(sheet)
+        self.frame_width = frame_width
+        self.frame_height = frame_height
+        self.display_width = display_width
+        self.display_height = display_height
+        self.num_frames = self.sheet.width // self.frame_width
+        self.frames = []
+        self.current_frame_num = 0
+        
+        self.makeframe()
+        
+    def makeframe(self):
+        for i in range(self.num_frames):
+            x = i * self.frame_width
+            y = 0
+            frame = self.sheet.crop((x, y, x + self.frame_width, y + self.frame_height))
+            
+            # 디스플레이 크기에 맞는 배경 생성
+            display_frame = Image.new("RGB", (self.display_width, self.display_height), (0, 0, 0))
+            
+            # 프레임 크기를 조정
+            resized_frame = frame.resize((self.display_width, self.display_height), Image.ANTIALIAS)
+            
+            # 중앙에 배치
+            x_offset = (self.display_width - resized_frame.width) // 2
+            y_offset = (self.display_height - resized_frame.height) // 2
+            display_frame.paste(resized_frame, (x_offset, y_offset))
+            
+            self.frames.append(display_frame)
+    
+    def get_next_frame(self):
+        self.current_frame_num = (self.current_frame_num + 1) % self.num_frames
+        return self.frames[self.current_frame_num]
         
 class Character:
     def __init__(self, width, height):
@@ -553,8 +589,14 @@ while True:
     
 '''
 
+testsheet = '/home/j9077/working_directory/esw_raspberryPi_game_project/image_source/character/player/Run.png'
+testAnime = Animation(testsheet, 800, 80)
+
+
+print(testAnime.sheet.size)
 
 while True: 
+    '''
     command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
     
     if not joystick.button_U.value:  # up pressed
@@ -690,6 +732,13 @@ while True:
 
     
     joystick.disp.image(my_image)
+    '''
+    
+    frame = testAnime.get_next_frame()
+    
+    joystick.disp.image(frame)
+    
+    time.sleep(1)
 
 
 print("게임 종료")

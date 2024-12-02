@@ -13,12 +13,14 @@ player_sprites = namedtuple('player', ['wait', 'move', 'attack', 'hit', 'die', '
 # 플레이어
 player_res = player_sprites(
     wait = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Idle.png'),
-    move = Image.open(absolute_path +'esw_raspberryPi_game_project/image_source/character/player/Run.png'),
+    move = absolute_path +'esw_raspberryPi_game_project/image_source/character/player/Run.png',
     attack = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Shot.png'),
     hit = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Hurt.png'),
     die = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Dead.png'),
     jump = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/character/player/Jump.png'),
 )
+
+print(player_res.move)
 
 monster_sprites = namedtuple('monster', ['wait', 'move', 'attack', 'hit', 'die'])
 
