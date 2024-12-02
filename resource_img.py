@@ -105,3 +105,8 @@ player_shoot = [
     Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/player_shoot3.png').convert("RGBA"),
     player_wait
 ]
+
+player_bullet = [
+    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/bullet_asset/player_bullet1.png').convert("RGBA"),
+    Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/bullet_asset/player_bullet2.png').convert("RGBA")
+]

@@ -7,7 +7,7 @@ import numpy as np
 from colorsys import hsv_to_rgb
 import board
 from digitalio import DigitalInOut, Direction
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from adafruit_rgb_display import st7789
 
 #from start_environment import game_wait #게임 시작화면 불러온 동시에 게임 시작함
@@ -67,10 +67,7 @@ class Joystick:
 
 class Player:
     def __init__(self, width, height, character_size_x, character_size_y):
-        
         self.state = None
-        #self.position = np.array([width/2 - 20, height/2 - 20, width/2 + 20, height/2 + 20])
-        
         #캐릭터 초기 위치
         self.character_x = 240 // 2 - character_size_x // 2
         self.character_y = 240 // 2 - character_size_y // 2
@@ -96,7 +93,7 @@ class Player:
         self.last_damage_time = 0    # 마지막으로 데미지 받은 시간
         self.invincibility_time = 2  # 데미지 입지 않는 무적 타임 (2초)
         
-        self.last_key_pressed = None       # 마지막으로 누른 키
+        self.last_key_pressed = 'right'    # 마지막으로 누른 키, 첫 시작은 플레이어가 오른쪽을 바라보고 있음, None로 초기화하면 시작해서 총쏘자마자 에러 발생
         self.previous_button_state = True  # 버튼이 눌리지 않은 상태로 시작
         
 
@@ -130,6 +127,67 @@ class Player:
                 if self.character_x < self.move_limit_x - self.character_x:
                     self.character_x += 5
                 self.last_key_pressed = 'right'
+    
+    
+    def damage(self, hit_damage):                   # 플레이어가 데미지 입는 부분
+        current_time = time.time()
+        
+        # 무적 시간 동안은 데미지를 입지 않음
+        if current_time - self.last_damage_time < self.invincibility_time:
+            return False  # 데미지 무시
+        
+        self.health -= hit_damage
+        self.last_damage_time = current_time
+        
+        if self.health <= 0:
+            print('플레이어 사망')
+            return True             # 게임 종료
+        
+        return False                # 죽기 전까지는 게임 마저 실행
+    
+    
+    def heal(self, heal_point):                     # 힐을 받는 부분, 이부분은 시간나면 해볼 것
+        if(self.health <= self.max_health):
+            self.health += heal_point
+        else:
+            self.health = self.max_health
+            
+    def player_health_bar(self, draw_bar):     # 체력 바 생성
+        """
+        체력 바를 그리는 함수
+        draw: ImageDraw 객체
+        position: 체력 바의 중심 위치 (x, y)
+        width, height: 체력 바 크기
+        health: 현재 체력
+        max_health: 최대 체력
+        """
+        x_calibrate = 45
+        y_calibrate = 30
+        
+        bar_length = 80
+        bar_height = 5
+
+        # 체력 비율에 따라 바의 길이 계산
+        health_ratio = self.health / self.max_health
+        filled_length = int(bar_length * health_ratio)
+        
+        if int(health_ratio * 100) >= 70 and int(health_ratio * 100) <= 100:
+            fill_color = (0, 255, 0)
+        elif int(health_ratio * 100) >= 50 and int(health_ratio * 100) < 70:
+            fill_color = (255, 255, 0)
+        else:
+            fill_color = (255, 0, 0)
+
+
+        # 체력 바
+        draw_bar.rectangle(
+            [self.character_x - bar_length // 2 + x_calibrate, 
+             self.character_y - bar_height // 2 + y_calibrate, 
+             self.character_x - bar_length // 2 + x_calibrate + filled_length, 
+             self.character_y + bar_height // 2 + y_calibrate],
+            fill = fill_color
+        )
+        
                                     
             
 '''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
@@ -174,10 +232,71 @@ class BackgroundScroller:
 
 '''-------------------------------------------------- 배경 세팅 --------------------------------------------------'''
 
+class Bullet:
+    def __init__(self, last_key_pressed):
+        self.speed = 10
+        self.damage = 10
+        self.state = None
+        self.image = player_bullet[0]
+        self.x = player.character_x + 55    #총알의 시작 위치 
+        self.y = player.character_y + 58
+        
+        self.direction = {'left' : False, 'right' : False}
+
+        if last_key_pressed == 'right':
+            self.direction['right'] = True
+        if last_key_pressed == 'left':
+            self.direction['left'] = True
+
+        
+    def move(self):
+        if self.direction['left']:
+            self.x -= self.speed
+            
+        if self.direction['right']:
+            self.x += self.speed
+  
+    '''        
+    def collision_check(self, enemys):      #적에게 맞았는지 확인
+        for enemy in enemys:
+            collision = self.overlap(self.position, enemy.position)
+            
+            if collision:
+                enemy.state = 'die'
+                self.state = 'hit'
+                
+    '''
+    
+    def draw(self, draw_surface): #현재 총알 이미지를 화면에 출력, (x, y) 좌표는 이미지의 좌상단을 기준으로 출력
+        if player.last_key_pressed == 'right':
+            draw_surface.paste(self.image, (self.x, self.y), self.image)  # 총알 이미지 출력
+        else:
+            draw_surface.paste(self.image.transpose(Image.FLIP_LEFT_RIGHT), (self.x, self.y), self.image.transpose(Image.FLIP_LEFT_RIGHT))
+    
+    def overlap(self, ego_position, other_position):
+        '''
+        두개의 사각형(bullet position, enemy position)이 겹치는지 확인하는 함수
+        좌표 표현 : [x1, y1, x2, y2]
+        
+        return :
+            True : if overlap
+            False : if not overlap
+        '''
+        return ego_position[0] > other_position[0] and ego_position[1] > other_position[1] \
+                 and ego_position[2] < other_position[2] and ego_position[3] < other_position[3]
+    
+    
+    def is_out_of_bounds(self, width, height):
+        """
+        총알이 화면 경계를 벗어났는지 확인하는 함수
+        """
+        if self.x < 0 or self.x > width or self.y < 0 or self.y > height:
+            return True
+        return False
+
+
 def player_bullet_fire():    
-    if not current_button_state and player.previous_button_state:  # 버튼이 눌림 (이전엔 안 눌렸지만 지금 눌림)
-        display.paste(cropped_background, (0, 0))                  # 배경 출력
-        print("총알 발사")
+    if not current_button_state and player.previous_button_state:  # 버튼이 눌림 (연속적으로 눌린 상태를 읽는 것을 방지)
         for i in range(len(player_shoot)):
             if player.last_key_pressed == 'right':
                 display.paste(player_shoot[i], 
@@ -188,10 +307,15 @@ def player_bullet_fire():
                               (player.character_x, player.character_y), 
                               player_shoot[i].transpose(Image.FLIP_LEFT_RIGHT))
             joystick.disp.image(display)
-            time.sleep(0.01)
-        
+            
+        # 총알을 발사할 때 총알 객체를 만들어 bullets 리스트에 추가
+        print(f"총알 발사, 방향: {player.last_key_pressed}")
+        bullet = Bullet(player.last_key_pressed)
+        bullets.append(bullet)
 
-#game_wait() # 게임 시작
+# --------------------------------------------------------------------------- 게임 시작 전 설정 사항
+            
+bullets = [] # 게임 시작 전 bullets 초기화
 
 #조이스틱, 캐릭터 초기화
 joystick = Joystick()
@@ -203,6 +327,12 @@ player = Player(width = joystick.width,
 scroller = BackgroundScroller(midnight_background, joystick.width, joystick.height) # 배경 클래스 초기화
 display = Image.new("RGB", (joystick.width, joystick.height)) # 디스플레이 초기화
 
+draw_bar = ImageDraw.Draw(display)                                #체력 바를 그리기 위한 draw
+
+
+
+
+#game_wait() # ---------------------------------------------------------------------- 게임 시작 전 출력 화면
 
 while True:
     command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
@@ -228,29 +358,52 @@ while True:
         if player.character_x > player.character_x -  player.move_limit_x:
             scroller.rightScroll(step = 5)
     
+    # ------------------------------------------------------------------------ 플레이어 총알 발사
     current_button_state = joystick.button_A.value  # 현재 버튼 상태
-    if not joystick.button_A.value: # A pressed
-        player_bullet_fire()            
+    if not joystick.button_A.value and player.previous_button_state: # A pressed
+        player_bullet_fire()        # 발사 모션
+
     # 버튼 상태 갱신
     player.previous_button_state = current_button_state
     
     
-            
-
-    player.move(command)
+    # ------------------------------------------------------------------------ 플레이어 및 적 이동 확인
+    player.move(command) #플레이어 이동 갱신
     
     
+    # ----------------------------------------------------------------------- 총알들의 유효성 및 피격 여부
+     
+    # 사용자 총알 위치 확인
+    bullets_to_keep = []
+    for bullet in bullets:
+        if bullet.is_out_of_bounds(joystick.width, joystick.height):
+            print(f"총알이 화면 밖으로 나갔습니다: {bullet.x} {bullet.y}")
+        elif bullet.state == 'hit':
+            print(f"총알 충돌로 제거: {bullet.x,} {bullet.y}")
+        else:
+            bullet.move()
+            bullets_to_keep.append(bullet)  # 유효한 총알만 유지
+    bullets = bullets_to_keep  # 유효한 총알로 리스트 업데이트
     
-    # print(player.character_x, player.character_y)
+    #print(len(bullets_to_keep)) # 총알 갯수 확인하기
     
-    
+    # -------------------------------------- --------------------------------------------- 출력 부분
+        
     cropped_background = scroller.get_cropped_image()   # 현재 스크롤 상태에 맞게 이미지를 가져옴
     display.paste(cropped_background, (0, 0))           # 배경 출력
+
+    display.paste(player.show_player_motion, (player.character_x, player.character_y), player.show_player_motion)  # 플레이어 출력
+    player.player_health_bar(draw_bar)
+    
+    for bullet in bullets:          # 플레이어 총알
+        if bullet.state != 'hit':
+            bullet.draw(display)  # 총알 이미지 출력
     
     
     
-    display.paste(player.show_player_motion, (player.character_x, player.character_y), player.show_player_motion)  # 알파 채널을 고려하여 프레임을 배경에 합성
-    # 배경 출력
+    
+    
+    
     joystick.disp.image(display)
 
     # 프레임 딜레이
