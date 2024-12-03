@@ -369,12 +369,15 @@ class Bullet:
         self.x = player.character_x + 55    # 총알의 시작 위치, 캐릭터 이미지를 생각해서 조금 값을 보정함
         self.y = player.character_y + 58
         
+        self.position = [self.x - 55, self.y - 58, self.x_size, self.y_size]
+        
         self.direction = {'left' : False, 'right' : False}
 
         if last_key_pressed == 'right':
             self.direction['right'] = True
         if last_key_pressed == 'left':
             self.direction['left'] = True
+    
 
         
     def move(self):
@@ -383,11 +386,13 @@ class Bullet:
             
         if self.direction['right']:
             self.x += self.speed
+                
+        print(self.position, enemy.position)
   
            
     def collision_check(self, enemys):      # 적에게 맞았는지 확인
         for enemy in enemys:
-            collision = self.overlap(enemy.position)
+            collision = self.overlap(self.position, enemy.position)
             
             if collision:
                 enemy.state = 'die'
@@ -401,21 +406,26 @@ class Bullet:
         else:
             draw_surface.paste(self.image.transpose(Image.FLIP_LEFT_RIGHT), (self.x, self.y), self.image.transpose(Image.FLIP_LEFT_RIGHT))
     
-    def overlap(self, enemy):
+    def overlap(self, ego_position, other_position):
         """
-        두 이미지 크기를 기준으로 충돌을 확인하는 함수
-        enemy: 적의 객체
+        두 이미지가 겹치는지 확인하는 함수
+        ego_position: [x, y, width, height] (총알)
+        other_position: [x, y, width, height] (적)
+        
+        return:
+            True: 겹침, False: 겹치지 않음
         """
+        ego_x, ego_y, ego_width, ego_height = ego_position  # 총알
+        other_x, other_y, other_width, other_height = other_position  # 적
+             
+        # 총알과 적이 겹치는지 확인
+        return not (
+            ego_x + ego_width < other_x or  # 총알의 오른쪽 끝이 적의 왼쪽 끝보다 왼쪽
+            ego_x > other_x + other_width or  # 총알의 왼쪽 끝이 적의 오른쪽 끝보다 오른쪽
+            ego_y + ego_height < other_y or  # 총알의 아래쪽 끝이 적의 위쪽 끝보다 위
+            ego_y > other_y + other_height  # 총알의 위쪽 끝이 적의 아래쪽 끝보다 아래
+        )
         
-        print("overlap")
-        # 총알의 (x, y) 좌표를 기준으로 충돌 박스를 계산
-        bullet_box = [self.x, self.y, self.x + self.x_size, self.y + self.y_size]
-        
-        # 적의 (x, y) 좌표와 크기를 기준으로 충돌 박스를 계산
-        enemy_box = [enemy.x, enemy.y, enemy.x + enemy.x_size, enemy.y + enemy.y_size]
-        
-        # 두 사각형 충돌 확인
-        return check_collision(bullet_box, enemy_box)  # 사각형 충돌 확인
     
     
     def is_out_of_bounds(self, width, height):                            # 총알이 화면 경계를 벗어났는지 확인하는 함수
