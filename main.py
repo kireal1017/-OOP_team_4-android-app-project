@@ -112,7 +112,7 @@ class Player:
         # 캐릭터의 중심 좌표 계산 (좌상단 기준으로 크기 반영)
         self.center = self.position + (self.character_size // 2)  # 중심 좌표 계산
         
-        #캐릭터 프레임 길이와 몇번째 프레임에 있는지 
+        #캐릭터 몇번째 프레임에 있는지 
         self.frame_index = 0
         
         #실제로 플레이어 모션을 보여줄 이미지
@@ -167,9 +167,6 @@ class Player:
             if command['left_pressed']:     # 왼쪽 이동
                 self.show_player_motion = self.player_move_frames[self.frame_index].transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
                 self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)        # 이건 나중에 파일 참조 할 것
-                # if self.character_x > self.move_limit_x:
-                #     self.character_x -= 5
-                
                 if self.character_x >= 10:
                     self.character_x -= 5
                 else:
@@ -181,8 +178,6 @@ class Player:
             if command['right_pressed']:    # 오른쪽 이동
                 self.show_player_motion = self.player_move_frames[self.frame_index]
                 self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)
-                # if self.character_x < self.move_limit_x - self.character_x:
-                #     self.character_x += 5
                 if self.character_x <= 150:
                     self.character_x += 5
                 else:
@@ -258,17 +253,25 @@ class Player:
         )
 
 class Enemy:
-    def __init__(self, image, spawn_position, attack_power, speed, health):
-        self.image = image
+    def __init__(self, move, attack, hurt, dead, spawn_position, attack_power, speed, health):
+        self.move_img = move
+        self.attack_img = attack
+        self.hurt_img = hurt
+        self.dead_img = dead
+         
         self.attack = attack_power     # 적의 공격력
         self.speed = speed             # 적의 이동 속도
         self.health = health           # 적의 체력
-        self.last_shot_time = 0        # 마지막 총알 발사 시간 기록
+        self.last_attack_time = 0      # 마지막 공격 시간 기록
         self.state = 'alive'
-        self.look_side = None
+        
+        self.approach = False
+        
+        self.frame_index = 0           # 프레임 위치
+        self.show_motion = self.move_img[0]     # 움직이는 첫 번째 이미지 출력
         
         self.x, self.y = spawn_position        
-        self.x_size, self.y_size = self.image.size
+        self.x_size, self.y_size = self.move_img[0].size
         
         self.center = np.array([self.x + self.x_size // 2, self.y + self.y_size // 2])      # 적의 중심 값
         # 적의 사각형 위치 (x1, y1, x2, y2) 형태
@@ -277,7 +280,6 @@ class Enemy:
         
     def update_center(self):
         """현재 중심 좌표 업데이트"""
-        
         self.center = np.array([(self.position[0] + self.position[2]) / 2, (self.position[1] + self.position[3]) / 2])
         
     
@@ -288,13 +290,20 @@ class Enemy:
         min_distance: 플레이어와 적 간 최소 거리
         """
         player_x, player_y = player_position  # 플레이어 x, y좌표 분리
-        enemy_x, enemy_y = self.center        # 적의 현재 x, y 좌표 
+        enemy_x, enemy_y = self.center        # 적의 현재 x, y 좌표
         
         # x 방향으로 이동
         if player_x > enemy_x:      # 플레이어가 오른쪽에 있으면
             move_x = self.speed
+            
+            self.show_motion = self.move_img[self.frame_index]
+            self.frame_index = (self.frame_index + 1) % len(self.move_img)      # 움직이는 이미지 표시
+            self.show_motion
         elif player_x < enemy_x:    # 플레이어가 왼쪽에 있으면
             move_x = -self.speed
+            
+            self.show_motion = self.move_img[self.frame_index].transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
+            self.frame_index = (self.frame_index + 1) % len(self.move_img)
         else:
             move_x = 0              # 플레이어와 x 좌표가 같으면 이동하지 않음
         
@@ -306,7 +315,9 @@ class Enemy:
         else:
             move_y = 0              # 플레이어와 y 좌표가 같으면 이동하지 않음
             
-        if np.linalg.norm(np.array([player_x - enemy_x, player_y - enemy_y])) > min_distance:
+        distance =  np.linalg.norm(np.array([player_x - enemy_x, player_y - enemy_y]))
+            
+        if distance > min_distance:
             self.position[0] += move_x  # 적의 x 좌표 이동
             self.position[2] += move_x  # 적의 x2 좌표 이동 (오른쪽 끝)
             self.position[1] += move_y  # 적의 y 좌표 이동
@@ -314,6 +325,12 @@ class Enemy:
         
         # 중심 좌표 갱신
         self.update_center()
+        
+        if distance <= min_distance:                    #적이 다가 왔다면
+            self.approach = True
+        else:
+            self.approach = False
+            
     
         
     def shoot(self, player_position):
@@ -325,7 +342,18 @@ class Enemy:
             direction = 'right'
         else:  # 플레이어가 적의 왼쪽에 있을 때
             direction = 'left'
-        return EnemyBullet(self.center, direction)       
+        return EnemyBullet(self.center, direction)
+    
+    def attack_player(self, current_time):
+        self.show_motion = self.attack_img[self.frame_index]
+        self.frame_index = (self.frame_index + 1) % len(self.move_img)      # 공격 이미지 표시
+        
+        if current_time - self.last_attack_time > 2:    # 2초가 지난 후에 공격
+            player.damage(self.attack)                  # 플레이어에게 데미지 주기
+            self.last_shot_time = current_time          # 마지막 공격 시간 갱신
+            print(f"적이 플레이어를 공격! {self.attack} 데미지 입음")
+    
+               
     
 '''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
 
@@ -359,7 +387,7 @@ class Bullet:
            
     def collision_check(self, enemys):      # 적에게 맞았는지 확인
         for enemy in enemys:
-            collision = self.overlap(self.position, enemy.position)
+            collision = self.overlap(enemy.position)
             
             if collision:
                 enemy.state = 'die'
@@ -373,17 +401,21 @@ class Bullet:
         else:
             draw_surface.paste(self.image.transpose(Image.FLIP_LEFT_RIGHT), (self.x, self.y), self.image.transpose(Image.FLIP_LEFT_RIGHT))
     
-    def overlap(self, ego_position, other_position):
-        '''
-        두개의 사각형(bullet position, enemy position)이 겹치는지 확인하는 함수
-        좌표 표현 : [x1, y1, x2, y2]
+    def overlap(self, enemy):
+        """
+        두 이미지 크기를 기준으로 충돌을 확인하는 함수
+        enemy: 적의 객체
+        """
         
-        return :
-            True : if overlap
-            False : if not overlap
-        '''
-        return ego_position[0] > other_position[0] and ego_position[1] > other_position[1] \
-                 and ego_position[2] < other_position[2] and ego_position[3] < other_position[3]
+        print("overlap")
+        # 총알의 (x, y) 좌표를 기준으로 충돌 박스를 계산
+        bullet_box = [self.x, self.y, self.x + self.x_size, self.y + self.y_size]
+        
+        # 적의 (x, y) 좌표와 크기를 기준으로 충돌 박스를 계산
+        enemy_box = [enemy.x, enemy.y, enemy.x + enemy.x_size, enemy.y + enemy.y_size]
+        
+        # 두 사각형 충돌 확인
+        return check_collision(bullet_box, enemy_box)  # 사각형 충돌 확인
     
     
     def is_out_of_bounds(self, width, height):                            # 총알이 화면 경계를 벗어났는지 확인하는 함수
@@ -425,7 +457,7 @@ player = Player(width = joystick.width,
                 character_size_x = 96, 
                 character_size_y = 96) #캐릭터 사이즈 96 x 96
 
-enemyLV1 = Enemy(enemy_test, (200, 50), 10, 1, 100)
+enemyLV1 = Enemy(monsterLV2_move, monsterLV2_attack, monsterLV2_hurt, monsterLV2_dead, (200, 50), 10, 1, 100)
 
 scroller = BackgroundScroller(midnight_background, joystick.width, joystick.height) # 배경 클래스 초기화
 display = Image.new("RGB", (joystick.width, joystick.height))                       # 디스플레이 초기화
@@ -554,7 +586,10 @@ while True:
     current_time = time.time()
     for enemy in enemys_list:
         if enemy.state == 'alive':
-            enemy.move_towards(player.center, min_distance = 100)  # 플레이어를 향해 이동, 일정 거리 떨어져서 옴
+            enemy.move_towards(player.center, min_distance = 10)  # 플레이어를 향해 이동, 일정 거리 떨어져서 옴
+            if enemy.approach:
+                enemy.attack_player(current_time)
+            
             # if current_time > enemy.last_shot_time + 1:  # 2초마다 발사
             #     enemy_bullet = enemy.shoot(player.center)  # 플레이어 위치 전달
             #     enemy_bullets.append(enemy_bullet)
@@ -579,7 +614,7 @@ while True:
     
     for enemy in enemys_list:
         if enemy.state != 'die':
-            display.paste(enemyLV1.image, (enemyLV1.position[0], enemyLV1.position[1]), enemyLV1.image)
+            display.paste(enemyLV1.show_motion, (enemyLV1.position[0], enemyLV1.position[1]), enemyLV1.show_motion)
     
 
     display.paste(player.show_player_motion, (player.character_x, player.character_y), player.show_player_motion)  # 플레이어 출력

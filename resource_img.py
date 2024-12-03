@@ -115,4 +115,96 @@ player_bullet = [
     Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/bullet_asset/player_bullet2.png').convert("RGBA")
 ]
 
+
+player_hurt = [
+    Image.open(absolute_path + player_path + 'player_hunt1.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player_hunt2.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player_hunt3.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player_hunt4.png').convert("RGBA")
+]
+
+player_dead = [
+    Image.open(absolute_path + player_path + 'player_dead1.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player_dead2.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player_dead3.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player_dead4.png').convert("RGBA"),
+    Image.open(absolute_path + player_path + 'player_dead5.png').convert("RGBA")
+]
+
+
+monsterLV1_path = 'esw_raspberryPi_game_project/image_source/character/enemy/monsterLV1/'
+
+
+monsterLV2_path = 'esw_raspberryPi_game_project/image_source/character/enemy/monsterLV2/'
+
+monsterLV2_move = [
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Walk1.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Walk2.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Walk3.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Walk4.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Walk5.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Walk6.png').convert("RGBA")
+]
+
+monsterLV2_attack = [
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Attack1.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Attack2.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Attack3.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Attack4.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Attack5.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Attack6.png').convert("RGBA")
+] 
+
+monsterLV2_hurt = [
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Hurt1.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Hurt2.png').convert("RGBA")
+]
+
+monsterLV2_dead = [
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Death1.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Death2.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Death3.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Death4.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Death5.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV2_path + 'moster2_Death6.png').convert("RGBA")
+]
+
+monsterLV3_path = 'esw_raspberryPi_game_project/image_source/character/enemy/monsterLV3/'
+
+monsterLV3_move = [
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Walk1.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Walk2.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Walk3.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Walk4.png').convert("RGBA")
+]
+
+monsterLV3_attack = [
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Attack1.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Attack2.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Attack3.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Attack4.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Attack5.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Attack6.png').convert("RGBA")
+]
+
+monsterLV3_hurt = [
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Hurt1.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Hurt2.png').convert("RGBA")   
+]
+
+monsterLV3_death = [
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Death1.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Death2.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Death3.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Death4.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Death5.png').convert("RGBA"),
+    Image.open(absolute_path + monsterLV3_path + 'moster3_Death6.png').convert("RGBA")
+]
+
+
+
+
+
+
+
 enemy_test = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_gif.gif').convert("RGBA")
