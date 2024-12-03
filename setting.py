@@ -80,68 +80,55 @@ class Player:
         self.frame_index = 0
         
         #실제로 플레이어 모션을 보여줄 이미지
-        self.show_player_motion = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_player/playerWait.png').convert("RGBA")       # 이미지 참조할 것
-        self.player_move_frames = player_move
+        self.show_player_motion = player_wait       # 기본으로 보이는건 대기 이미지
+        self.player_move_frames = player_move       # 움직이기
         
         # 캐릭터 이동 관련 커맨드
-        self.command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
+        self.command = {'move': False, 'up_pressed': False , 'down_pressed': False, 
+                        'left_pressed': False, 'right_pressed': False}
         
         self.health = 100            # 내 체력
         self.max_health = 100        # 치료를 염두해둔 최대 체력
         self.last_damage_time = 0    # 마지막으로 데미지 받은 시간
         self.invincibility_time = 2  # 데미지 입지 않는 무적 타임 (2초)
         
-
-
-    def move(self, command):
-        print("실행중")
+        self.last_key_pressed = None       # 마지막으로 누른 키
+        self.previous_button_state = True  # 버튼이 눌리지 않은 상태로 시작
         
-        if command['up']:       # 위로 이동
-            if self.character_y > self.move_limit_y:    #플레이어가 상단 리미트 높이를 벗어나지 않도록 이동 
-                self.character_y -= 5
-            print("up")
-                
-            #self.position[1] -= 5
-            #self.position[3] -= 5
 
-        elif command['down']:     # 아래 이동
-            self.character_y += 5
-            
-            # self.position[1] += 5
-            # self.position[3] += 5
-
-        elif command['left']:     # 왼쪽 이동
-            self.show_player_motion = self.player_move_frames.transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
-            self.frame_index = (self.frame_index + 1) % len(self.player_move_frames) #이건 나중에 파일 참조 할 것
-            if self.character_x > self.move_limit_x:
-                self.character_x -= 5
-            # self.position[0] -= 5
-            # self.position[2] -= 5
-            
-        elif command['right']:    # 오른쪽 이동
-            self.show_player_motion = self.player_move_frames
-            self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)
-            if self.character_x < self.move_limit_x - self.character_x:
-                self.character_x += 5
-            
-            # self.position[0] += 5
-            # self.position[2] += 5
-            
+    def move(self, command = None):
+        if command['move'] == False:
+            if self.last_key_pressed == 'left': #왼쪽 키를 마지막으로 누르면 대기 이미지도 반전
+                self.show_player_motion = player_wait.transpose(Image.FLIP_LEFT_RIGHT)
+            else:
+                self.show_player_motion = player_wait
         else:
-            self.show_player_motion = player_wait
+            if command['up_pressed']:       # 위로 이동
+                if self.character_y > self.move_limit_y:    #플레이어가 상단 리미트 높이를 벗어나지 않도록 이동 
+                    self.character_y -= 5
+                        
+
+            if command['down_pressed']:     # 아래 이동
+                self.character_y += 5
                 
-            '''
-            if command['button_A_pressed']:
-                print("버튼 A 입력")
+                
+            if command['left_pressed']:     # 왼쪽 이동
+                self.show_player_motion = self.player_move_frames[self.frame_index].transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
+                self.frame_index = (self.frame_index + 1) % len(self.player_move_frames) #이건 나중에 파일 참조 할 것
+                if self.character_x > self.move_limit_x:
+                    self.character_x -= 5
+                self.last_key_pressed = 'left'
+                
+                
+            if command['right_pressed']:    # 오른쪽 이동
+                self.show_player_motion = self.player_move_frames[self.frame_index]
+                self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)
+                if self.character_x < self.move_limit_x - self.character_x:
+                    self.character_x += 5
+                self.last_key_pressed = 'right'
+                                    
             
-            if command['button_B_pressed']:
-                print("버튼 B 입력")
-            ''' 
-                
-
-
 '''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
-
 
 class BackgroundScroller:
     def __init__(self, image, display_width, display_height):
@@ -150,7 +137,13 @@ class BackgroundScroller:
         self.display_height = display_height
         self.scroll_position = 0  # 현재 스크롤 위치
         self.image_width = image.width
-        self.maxplayerRange = 5
+        self.maxplayerRange = 3
+        
+        # 바다로 들어가지 않도록 y 이동 범위 지정
+        self.y_low_limit = 142
+        self.y_limit_morning = 72
+        self.y_limit_sunset = 97
+        self.y_limit_midnight = 62
 
     def rightScroll(self, step):
         """배경 이미지를 step만큼 이동"""
@@ -162,7 +155,7 @@ class BackgroundScroller:
         self.scroll_position += step
     
     def leftScroll(self, step):
-        if self.scroll_position <= self.maxplayerRange: #왼쪽 끝에 도달했을 경우
+        if self.scroll_position <= self.maxplayerRange: # 왼쪽 끝에 도달했을 경우
             step = 0
         
         print(self.scroll_position)                 #테스트 출력
@@ -174,6 +167,5 @@ class BackgroundScroller:
         left = self.scroll_position
         right = self.scroll_position + self.display_width
         return self.image.crop((left, 0, right, self.display_height))
-
 
 '''-------------------------------------------------- 배경 세팅 --------------------------------------------------'''

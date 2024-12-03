@@ -324,6 +324,7 @@ class Enemy:
             self.position[3] += move_y  # 적의 y2 좌표 이동 (아래쪽 끝)
         
         # 중심 좌표 갱신
+        #self.position = np.array([self.x, self.y, self.x + self.x_size, self.y + self.y_size]) # 업데이트
         self.update_center()
         
         if distance <= min_distance:                    #적이 다가 왔다면
@@ -386,18 +387,21 @@ class Bullet:
             
         if self.direction['right']:
             self.x += self.speed
-                
+        
+        self.position = [self.x - 55, self.y - 58, (self.x - 55) + self.x_size, (self.y - 58) + self.y_size] #위치 업데이트
         print(self.position, enemy.position)
-  
+          
            
     def collision_check(self, enemys):      # 적에게 맞았는지 확인
         for enemy in enemys:
             collision = self.overlap(self.position, enemy.position)
             
             if collision:
+                print("T")
                 enemy.state = 'die'
                 self.state = 'hit'
-                
+            else:
+                print("F")
     
     
     def draw(self, draw_surface): #현재 총알 이미지를 화면에 출력, (x, y) 좌표는 이미지의 좌상단을 기준으로 출력
@@ -407,6 +411,7 @@ class Bullet:
             draw_surface.paste(self.image.transpose(Image.FLIP_LEFT_RIGHT), (self.x, self.y), self.image.transpose(Image.FLIP_LEFT_RIGHT))
     
     def overlap(self, ego_position, other_position):
+        print("over")
         """
         두 이미지가 겹치는지 확인하는 함수
         ego_position: [x, y, width, height] (총알)
@@ -415,16 +420,16 @@ class Bullet:
         return:
             True: 겹침, False: 겹치지 않음
         """
-        ego_x, ego_y, ego_width, ego_height = ego_position  # 총알
-        other_x, other_y, other_width, other_height = other_position  # 적
              
         # 총알과 적이 겹치는지 확인
         return not (
-            ego_x + ego_width < other_x or  # 총알의 오른쪽 끝이 적의 왼쪽 끝보다 왼쪽
-            ego_x > other_x + other_width or  # 총알의 왼쪽 끝이 적의 오른쪽 끝보다 오른쪽
-            ego_y + ego_height < other_y or  # 총알의 아래쪽 끝이 적의 위쪽 끝보다 위
-            ego_y > other_y + other_height  # 총알의 위쪽 끝이 적의 아래쪽 끝보다 아래
+            ego_position[2] < other_position[0] or  # image1의 오른쪽이 image2의 왼쪽보다 왼쪽
+            ego_position[0] > other_position[2] or  # image1의 왼쪽이 image2의 오른쪽보다 오른쪽
+            ego_position[3] < other_position[1] or  # image1의 아래쪽이 image2의 위쪽보다 위
+            ego_position[1] > other_position[3]     # image1의 위쪽이 image2의 아래쪽보다 아래
         )
+        
+        
         
     
     
@@ -467,7 +472,7 @@ player = Player(width = joystick.width,
                 character_size_x = 96, 
                 character_size_y = 96) #캐릭터 사이즈 96 x 96
 
-enemyLV1 = Enemy(monsterLV2_move, monsterLV2_attack, monsterLV2_hurt, monsterLV2_dead, (200, 50), 10, 1, 100)
+enemyLV1 = Enemy(monsterLV2_move, monsterLV2_attack, monsterLV2_hurt, monsterLV2_dead, (200, 200), 10, 1, 100)
 
 scroller = BackgroundScroller(midnight_background, joystick.width, joystick.height) # 배경 클래스 초기화
 display = Image.new("RGB", (joystick.width, joystick.height))                       # 디스플레이 초기화
@@ -560,6 +565,7 @@ while True:
     player.move(command) #플레이어 이동 갱신
     
     
+    
     # ----------------------------------------------------------------------- 총알들의 유효성 및 피격 여부
      
     # 사용자 총알 위치 확인
@@ -571,6 +577,7 @@ while True:
             print(f"총알 충돌로 제거: {bullet.x,} {bullet.y}")
         else:
             bullet.move()
+            bullet.collision_check(enemys_list)
             bullets_to_keep.append(bullet)  # 유효한 총알만 유지
     bullets = bullets_to_keep  # 유효한 총알로 리스트 업데이트
     
