@@ -112,6 +112,11 @@ class Player:
         self.character_x = 240 // 2 - character_size_x // 2
         self.character_y = 240 // 2 - character_size_y // 2
         
+        self.character_size = np.array([character_size_x, character_size_y]) # 캐릭터 크기
+        self.position = np.array([self.character_x, self.character_y]) # 캐릭터 좌상단 좌표
+
+        # 캐릭터의 중심 좌표 계산 (좌상단 기준으로 크기 반영)
+        self.center = self.position + (self.character_size // 2)  # 중심 좌표 계산
         
         #캐릭터와 벽의 최소 거리
         self.move_limit_x = 50
@@ -287,7 +292,7 @@ class Bullet:
         self.damage = 10
         self.state = None
         self.image = player_bullet[0]
-        self.x = player.character_x + 55    #총알의 시작 위치 
+        self.x = player.character_x + 55    #총알의 시작 위치 캐릭터 이미지를 생각해서 조금 값을 보정함
         self.y = player.character_y + 58
         
         self.direction = {'left' : False, 'right' : False}
@@ -305,8 +310,8 @@ class Bullet:
         if self.direction['right']:
             self.x += self.speed
   
-    '''        
-    def collision_check(self, enemys):      #적에게 맞았는지 확인
+           
+    def collision_check(self, enemys):      # 적에게 맞았는지 확인
         for enemy in enemys:
             collision = self.overlap(self.position, enemy.position)
             
@@ -314,7 +319,7 @@ class Bullet:
                 enemy.state = 'die'
                 self.state = 'hit'
                 
-    '''
+    
     
     def draw(self, draw_surface): #현재 총알 이미지를 화면에 출력, (x, y) 좌표는 이미지의 좌상단을 기준으로 출력
         if player.last_key_pressed == 'right':
@@ -335,10 +340,7 @@ class Bullet:
                  and ego_position[2] < other_position[2] and ego_position[3] < other_position[3]
     
     
-    def is_out_of_bounds(self, width, height):
-        """
-        총알이 화면 경계를 벗어났는지 확인하는 함수
-        """
+    def is_out_of_bounds(self, width, height):                            # 총알이 화면 경계를 벗어났는지 확인하는 함수
         if self.x < 0 or self.x > width or self.y < 0 or self.y > height:
             return True
         return False
@@ -369,7 +371,7 @@ class EnemyBullet:
 
 # --------------------------------------------------------------------------- 게임 시작 전 설정 사항
             
-bullets = [] # 게임 시작 전 bullets 초기화
+
 
 #조이스틱, 캐릭터 초기화
 joystick = Joystick()
@@ -378,13 +380,16 @@ player = Player(width = joystick.width,
                 character_size_x = 96, 
                 character_size_y = 96) #캐릭터 사이즈 96 x 96
 
-scroller = BackgroundScroller(midnight_background, joystick.width, joystick.height) # 배경 클래스 초기화
-display = Image.new("RGB", (joystick.width, joystick.height)) # 디스플레이 초기화
 
-draw_bar = ImageDraw.Draw(display)                                  # 체력 바 및 경고창을 그리기 위한 draw
+scroller = BackgroundScroller(midnight_background, joystick.width, joystick.height) # 배경 클래스 초기화
+display = Image.new("RGB", (joystick.width, joystick.height))                       # 디스플레이 초기화
+
+draw_bar = ImageDraw.Draw(display)                                                  # 체력 바 및 경고창을 그리기 위한 draw
 
 font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # 폰트 설정
 font = ImageFont.truetype(font_path, 17)                            # 폰트 크기
+
+# ------------------------------------------------------------------------------ 디스플레이 관련 설정
 
 
 def player_bullet_fire():    #플레이어 총알 발사
@@ -405,7 +410,35 @@ def player_bullet_fire():    #플레이어 총알 발사
         bullet = Bullet(player.last_key_pressed)
         bullets.append(bullet)
 
+def spawn_random_enemies(num_enemies, width, height):               # 적 랜덤으로 생성
+    """
+    랜덤한 위치에 적을 생성하는 함수
+    num_enemies: 생성할 적의 수
+    width, height: 스크린 크기
+    """
+    new_enemies = []
+    for _ in range(num_enemies):
+        x = random.randint(50, width - 50)  # 화면 가장자리에서 벗어나도록 최소/최대 값 설정
+        y = random.randint(50, height - 50)
+        new_enemies.append(Enemy((x, y)))
+    return new_enemies
 
+def check_collision(rect1, rect2):                                          # 총알 맞았는지 확인 함수
+    """
+    두 사각형(rect1, rect2)이 겹치는지 확인하는 함수
+    rect1, rect2: [x1, y1, x2, y2] 형태의 사각형 좌표 리스트
+    return: True if the rectangles overlap, False otherwise
+    """
+    return not (
+        rect1[2] < rect2[0] or  # rect1의 오른쪽이 rect2의 왼쪽보다 왼쪽
+        rect1[0] > rect2[2] or  # rect1의 왼쪽이 rect2의 오른쪽보다 오른쪽
+        rect1[3] < rect2[1] or  # rect1의 아래쪽이 rect2의 위쪽보다 위
+        rect1[1] > rect2[3]     # rect1의 위쪽이 rect2의 아래쪽보다 아래
+    )
+
+enemys_list = []    # 적 리스트 초기화
+enemy_bullets = []  # 적 총알 리스트 초기화
+bullets = []        # 내 총알 리스트
 
 #game_wait() # ---------------------------------------------------------------------- 게임 시작 전 출력 화면
 
@@ -462,10 +495,60 @@ while True:
     
     #print(len(bullets_to_keep)) # 총알 갯수 확인하기
     
+    #적이 총에 맞았다면 즉시 제거 됨
+    remaining_enemies = []
+    for enemy in enemys_list:
+        if enemy.state == 'die':
+            print(f"적 제거: {enemy.position}")
+        else:
+            remaining_enemies.append(enemy)  # 유효한 적만 유지
+    enemys_list = remaining_enemies          # 유효한 적으로 리스트 업데이트
+    
+    
+    # 적이 모두 제거되었을 경우 새로운 적 3개 생성
+    if len(enemys_list) == 0:
+        print("새로운 적을 생성합니다!")
+        enemys_list.extend(spawn_random_enemies(3, joystick.width, joystick.height))  # 적 추가
+        
+    
+    # 적이 플레이어를 향해 이동하고 일정 시간마다 총알 발사
+    current_time = time.time()
+    for enemy in enemys_list:
+        if enemy.state == 'alive':
+            enemy.move_towards(player.center, min_distance = 80)  # 플레이어를 향해 이동, 일정 거리 떨어져서 옴
+            if current_time > enemy.last_shot_time + 1:  # 2초마다 발사
+                enemy_bullet = enemy.shoot(player.center)  # 플레이어 위치 전달
+                enemy_bullets.append(enemy_bullet)
+                enemy.last_shot_time = current_time  # 발사 시간 갱신
+    
+    # 적 총알 이동 및 화면 경계 처리       
+    enemy_bullets_to_keep = []
+    for bullet in enemy_bullets:
+        bullet.move()
+        
+        # 플레이어와 충돌 확인
+        if check_collision(bullet.position, player.position):
+            print("플레이어가 적의 총알에 맞았습니다!")
+            if player.damage(10):  # 체력 감소 (10만큼 데미지)
+                break                                                   #우선 for문 먼저 나옴
+            bullet.state = 'hit'  # 충돌한 총알 상태를 변경
+            continue  # 해당 총알은 더 이상 처리하지 않도록 다음 총알로 넘어감
+        
+        # 적 총알 위치 확인    
+        if bullet.is_out_of_bounds(joystick.width, joystick.height):
+            print(f"적 총알 제거: {bullet.position}")
+        else:
+            enemy_bullets_to_keep.append(bullet)
+    enemy_bullets = enemy_bullets_to_keep  # 유효한 총알만 유지
+    
     # -------------------------------------- --------------------------------------------- 출력 부분
         
     cropped_background = scroller.get_cropped_image()   # 현재 스크롤 상태에 맞게 이미지를 가져옴
     display.paste(cropped_background, (0, 0))           # 배경 출력
+    
+    for enemy in enemys_list:
+        if enemy.state != 'die':
+            draw_bar.ellipse(tuple(enemy.position), outline = enemy.outline, fill = (255, 0, 0)) # 적 그리기
 
     display.paste(player.show_player_motion, (player.character_x, player.character_y), player.show_player_motion)  # 플레이어 출력
     player.player_health_bar(draw_bar)
