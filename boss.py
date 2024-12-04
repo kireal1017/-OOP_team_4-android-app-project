@@ -1,5 +1,7 @@
-import random
+from resource_img import *
 import time
+import random
+
 import numpy as np
 from colorsys import hsv_to_rgb
 import board
@@ -7,8 +9,7 @@ from digitalio import DigitalInOut, Direction
 from PIL import Image, ImageDraw, ImageFont
 from adafruit_rgb_display import st7789
 
-from resource_img import *
-
+#from start_environment import game_wait #게임 시작화면 불러온 동시에 게임 시작함
 
 class Joystick:
     def __init__(self):
@@ -148,13 +149,13 @@ class Player:
                 self.show_player_motion = player_wait
         else:
             if command['up_pressed']:       # 위로 이동
-                if Stage_set.stage_level == 1:              # 각 스테이지 별로 y높이를 다르게 조정(바다 이미지 때문에)
+                if stage.stage_level == 1:              # 각 스테이지 별로 y높이를 다르게 조정(바다 이미지 때문에)
                     if self.character_y >= self.y_limit_morning:
                         self.character_y -= 5
-                elif Stage_set.stage_level == 2:
+                elif stage.stage_level == 2:
                     if self.character_y >= self.y_limit_sunset:
                         self.character_y -= 5
-                elif Stage_set.stage_level == 3:
+                elif stage.stage_level == 3:
                     if self.character_y >= self.y_limit_midnight:
                         self.character_y -= 5
                         
@@ -170,7 +171,7 @@ class Player:
                 if self.character_x >= 10:
                     self.character_x -= 5
                 else:
-                    BackgroundScroller.leftScroll(step = 5)
+                    scroller.leftScroll(step = 5)
             
                 self.last_key_pressed = 'left'
                 
@@ -181,7 +182,7 @@ class Player:
                 if self.character_x <= 150:
                     self.character_x += 5
                 else:
-                    BackgroundScroller.rightScroll(step = 5)
+                    scroller.rightScroll(step = 5)
                 
                 self.last_key_pressed = 'right'
                 
@@ -351,7 +352,7 @@ class Enemy:
         self.frame_index = (self.frame_index + 1) % len(self.move_img)      # 공격 이미지 표시
         
         if current_time - self.last_attack_time > 2:    # 2초가 지난 후에 공격
-            Player.damage(self.attack)                  # 플레이어에게 데미지 주기
+            player.damage(self.attack)                  # 플레이어에게 데미지 주기
             self.last_shot_time = current_time          # 마지막 공격 시간 갱신
             print(f"적이 플레이어를 공격! {self.attack} 데미지 입음")
     
@@ -370,8 +371,8 @@ class Bullet:
         offset_y = 58  # 플레이어 총구의 Y축 위치 조정
 
         # 플레이어 위치와 오프셋을 기준으로 총알 위치 설정
-        self.x = Player.character_x + offset_x
-        self.y = Player.character_y + offset_y
+        self.x = player.character_x + offset_x
+        self.y = player.character_y + offset_y
         
         self.position = [self.x, self.y, self.x + self.x_size, self.y + self.y_size]
         
@@ -391,7 +392,7 @@ class Bullet:
             self.x += self.speed
         
         self.position = [self.x, self.y, self.x + self.x_size, self.y + self.y_size] #위치 업데이트
-        print(self.position, Enemy.position)
+        print(self.position, enemy.position)
           
            
     def collision_check(self, enemys):              # 적에게 맞았는지 확인
@@ -412,7 +413,6 @@ class Bullet:
             draw_surface.paste(self.image.transpose(Image.FLIP_LEFT_RIGHT), (self.x, self.y), self.image.transpose(Image.FLIP_LEFT_RIGHT))
     
     def overlap(self, ego_position, other_position):
-        print("over")
         """
         두 이미지가 겹치는지 확인하는 함수
         ego_position: [x, y, width, height] (총알)
@@ -490,5 +490,326 @@ class Stage_set:
             self.goal_enemy_kill = 20
             self.spawn_enemy_num = 5
 
-
 '''-------------------------------------------------- 스테이지 세팅 --------------------------------------------------'''
+
+# --------------------------------------------------------------------------- 게임 시작 전 설정 사항
+            
+#조이스틱, 캐릭터 초기화
+joystick = Joystick()
+player = Player(width = joystick.width, 
+                height = joystick.height, 
+                character_size_x = 96, 
+                character_size_y = 96) #캐릭터 사이즈 96 x 96
+
+stage = Stage_set(stage_level = 1)  # 스테이지 정하기
+
+scroller = BackgroundScroller(stage.background, joystick.width, joystick.height) # 배경 클래스 초기화
+display = Image.new("RGB", (joystick.width, joystick.height))                       # 디스플레이 초기화
+
+draw_bar = ImageDraw.Draw(display)                                                  # 체력 바 및 경고창을 그리기 위한 draw
+
+font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # 폰트 설정
+font = ImageFont.truetype(font_path, 17)                            # 폰트 크기
+
+# ------------------------------------------------------------------------------ 디스플레이 관련 설정
+
+def player_bullet_fire():               # 플레이어 총알 발사
+    if not current_button_state and player.previous_button_state:  # 버튼이 눌림 (연속적으로 눌린 상태를 읽는 것을 방지)
+        for i in range(len(player_shoot)):
+            if player.last_key_pressed == 'right':
+                display.paste(player_shoot[i], 
+                              (player.character_x, player.character_y), 
+                              player_shoot[i])
+            else:                                                 # 왼쪽을 바라보고 있었으면 반대로 뒤집어서 보이기
+                display.paste(player_shoot[i].transpose(Image.FLIP_LEFT_RIGHT), 
+                              (player.character_x, player.character_y), 
+                              player_shoot[i].transpose(Image.FLIP_LEFT_RIGHT))
+            joystick.disp.image(display)
+            
+        # 총알을 발사할 때 총알 객체를 만들어 bullets 리스트에 추가
+        print(f"총알 발사, 방향: {player.last_key_pressed}")
+        bullet = Bullet(player.last_key_pressed)
+        bullets.append(bullet)
+
+    if stage.enemy_type == 'monsterLV1':
+        enemy_config = {
+            'move': monsterLV1_move,
+            'attack': monsterLV1_attack,
+            'hurt': monsterLV1_hurt,
+            'dead': monsterLV1_dead,
+            'attack_power': 5,
+            'speed': 1,
+            'health': 50
+        }
+    elif stage.enemy_type == 'monsterLV2':
+        enemy_config = {
+            'move': monsterLV2_move,
+            'attack': monsterLV2_attack,
+            'hurt': monsterLV2_hurt,
+            'dead': monsterLV2_dead,
+            'attack_power': 10,
+            'speed': 2,
+            'health': 100
+        }
+    elif stage.enemy_type == 'monsterLV3':
+        enemy_config = {
+            'move': monsterLV3_move,
+            'attack': monsterLV3_attack,
+            'hurt': monsterLV3_hurt,
+            'dead': monsterLV3_dead,
+            'attack_power': 20,
+            'speed': 1,
+            'health': 150
+        }
+        
+    
+    new_enemies = []
+    for _ in range(num_enemies):
+        random_x = random.choice([random.randint(0, 0), random.randint(joystick.width - 40, joystick.width)]) 
+        random_y = random.randint(player.y_limit_midnight + 50, player.y_bottom_limit)
+
+        # Enemy 클래스 인스턴스 생성, 여기서 생성되는 몹들은 보스가 아니기에 boss는 False로 반환
+        new_enemy = Enemy(
+            move = enemy_config['move'],
+            attack = enemy_config['attack'],
+            hurt = enemy_config['hurt'],
+            dead = enemy_config['dead'],
+            spawn_position = (random_x, random_y),
+            attack_power = enemy_config['attack_power'],
+            speed = enemy_config['speed'],
+            health = enemy_config['health'],
+            boss = False
+        )
+        new_enemies.append(new_enemy)
+    return new_enemies
+
+
+    if stage.boss == 'bossLV1':
+        print("LV1")
+        enemy_config = {
+            'move': bossLV1_move,
+            'attack': bossLV1_attack,
+            'hurt': bossLV1_hurt,
+            'dead': bossLV1_dead,
+            'attack_power': 10,
+            'speed': 1,
+            'health': 50
+        }
+    elif stage.boss == 'bossLV2':
+        print("LV2")
+        enemy_config = {
+            'move': bossLV2_move,
+            'attack': bossLV2_attack,
+            'hurt': bossLV2_hurt,
+            'dead': bossLV2_dead,
+            'attack_power': 20,
+            'speed': 2,
+            'health': 100
+        }
+    elif stage.boss == 'bossLV3':
+        print("LV3")
+        enemy_config = {
+            'move': bossLV3_move,
+            'attack': bossLV3_attack,
+            'hurt': bossLV3_hurt,
+            'dead': bossLV3_dead,
+            'attack_power': 10,
+            'speed': 2,
+            'health': 150
+        }
+
+    random_x = random.randint(joystick.width - 50, joystick.width)  # 보스 위치를 화면의 오른쪽 끝 근처로 설정
+    random_y = random.randint(player.y_limit_midnight + 50, player.y_bottom_limit)
+
+    # 보스의 속성 설정 (보스는 다른 몹과 다름으로 boss = True를 반환함)
+    make_boss = Enemy(
+            move = enemy_config['move'],
+            attack = enemy_config['attack'],
+            hurt = enemy_config['hurt'],
+            dead = enemy_config['dead'],
+            spawn_position = (random_x, random_y),
+            attack_power = enemy_config['attack_power'],
+            speed = enemy_config['speed'],
+            health = enemy_config['health'],
+            boss = True
+        )
+    enemys_list.append(make_boss)  # 보스를 적 목록에 추가
+
+if stage.boss == 'bossLV1':
+        print("LV1")
+        enemy_config = {
+            'move': bossLV1_move,
+            'attack': bossLV1_attack,
+            'hurt': bossLV1_hurt,
+            'dead': bossLV1_dead,
+            'attack_power': 10,
+            'speed': 1,
+            'health': 50
+        }
+elif stage.boss == 'bossLV2':
+    print("LV2")
+    enemy_config = {
+        'move': bossLV2_move,
+        'attack': bossLV2_attack,
+        'hurt': bossLV2_hurt,
+        'dead': bossLV2_dead,
+        'attack_power': 20,
+        'speed': 2,
+        'health': 100
+    }
+elif stage.boss == 'bossLV3':
+    print("LV3")
+    enemy_config = {
+        'move': bossLV3_move,
+        'attack': bossLV3_attack,
+        'hurt': bossLV3_hurt,
+        'dead': bossLV3_dead,
+        'attack_power': 10,
+        'speed': 2,
+        'health': 150
+    }
+
+random_x = random.randint(joystick.width - 50, joystick.width)   # 보스 위치를 화면의 오른쪽 끝 근처로 설정
+random_y = random.randint(player.y_limit_midnight + 50, player.y_bottom_limit)
+
+# 보스의 속성 설정 (보스는 다른 몹과 다름으로 boss = True를 반환함)
+stage_boss = Enemy(
+        move = enemy_config['move'],
+        attack = enemy_config['attack'],
+        hurt = enemy_config['hurt'],
+        dead = enemy_config['dead'],
+        spawn_position = (random_x, random_y),
+        attack_power = enemy_config['attack_power'],
+        speed = enemy_config['speed'],
+        health = enemy_config['health'],
+        boss = True
+    )
+
+enemys_list = [stage_boss]    # 적 리스트 초기화
+enemy_bullets = []  # 적 총알 리스트 초기화
+bullets = []        # 내 총알 리스트
+
+#game_wait() # ---------------------------------------------------------------------- 게임 시작 전 출력 화면
+
+while True:
+    command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
+    if not joystick.button_U.value:  # up pressed
+        command['up_pressed'] = True
+        command['move'] = True
+
+    if not joystick.button_D.value:  # down pressed
+        command['down_pressed'] = True
+        command['move'] = True
+
+    if not joystick.button_L.value:  # left pressed
+        command['left_pressed'] = True
+        command['move'] = True
+
+    if not joystick.button_R.value:  # right pressed
+        command['right_pressed'] = True
+        command['move'] = True
+    
+    # ------------------------------------------------------------------------ 플레이어 총알 발사
+    current_button_state = joystick.button_A.value  # 현재 버튼 상태
+    if not joystick.button_A.value and player.previous_button_state: # A pressed
+        player_bullet_fire()        # 발사 모션
+
+    # 버튼 상태 갱신
+    player.previous_button_state = current_button_state
+    
+    # ------------------------------------------------------------------------ 플레이어 및 적 이동 확인
+    player.move(command) #플레이어 이동 갱신
+    
+    # ----------------------------------------------------------------------- 총알들의 유효성 및 피격 여부
+     
+    # 사용자 총알 위치 확인
+    bullets_to_keep = []
+    for bullet in bullets:
+        if bullet.is_out_of_bounds(joystick.width, joystick.height):
+            print(f"총알이 화면 밖으로 나갔습니다: {bullet.x} {bullet.y}")
+        elif bullet.state == 'hit':
+            print(f"총알 충돌로 제거: {bullet.x} {bullet.y}")
+        else:
+            bullet.move()
+            bullet.collision_check(enemys_list)
+            bullets_to_keep.append(bullet)  # 유효한 총알만 유지
+    bullets = bullets_to_keep               # 유효한 총알로 리스트 업데이트
+    
+    #print(len(bullets_to_keep)) # 총알 갯수 확인하기
+    
+    #적이 총에 맞았다면 즉시 제거 됨
+    remaining_enemies = []
+    for enemy in enemys_list:
+        print("코드테스트")            
+        if enemy.boss_check:  # 적 캐릭터가 보스일 경우
+            if enemy.health > 0:  # 보스가 살아있다면
+                enemy.health -= bullet.damage  # 총알 데미지만큼 체력 감소
+            else:
+                if enemy.state != 'die':  # 보스가 죽었을 때만 상태 변경
+                    enemy.state = 'die'   # 보스 죽음 처리
+                    print(f"보스가 쓰러졌습니다! 위치: {enemy.position}")
+        else:
+            if enemy.state == 'die':
+                player.killed_enemy += 1              # 적 사살횟수 증가
+                print(f"적 제거: {enemy.position} / {player.killed_enemy}")
+            else:
+                remaining_enemies.append(enemy)       # 유효한 적만 유지
+
+    enemys_list = remaining_enemies          # 유효한 적으로 리스트 업데이트
+    
+    
+    # 적이 모두 제거되었을 경우 새로운 적 3개 생성
+    if len(enemys_list) == 0:
+        print("게임 끝")
+        break
+        
+    
+    
+    
+    # 적이 플레이어를 향해 이동하고 일정 시간마다 총알 발사
+    current_time = time.time()
+    
+    for enemy in enemys_list:
+        if enemy.state == 'alive':
+            enemy.move_towards(player.center, min_distance = 20)  # 플레이어를 향해 이동, 일정 거리 떨어져서 옴
+            if enemy.approach:
+                enemy.attack_player(current_time)
+            
+            # if current_time > enemy.last_shot_time + 1:  # 2초마다 발사
+            #     enemy_bullet = enemy.shoot(player.center)  # 플레이어 위치 전달
+            #     enemy_bullets.append(enemy_bullet)
+            #     enemy.last_shot_time = current_time  # 발사 시간 갱신
+    
+    # 적 총알 이동 및 화면 경계 처리       
+    # enemy_bullets_to_keep = []
+    # for bullet in enemy_bullets:
+    #     bullet.move()
+        
+    #     # 적 총알 위치 확인    
+    #     if bullet.is_out_of_bounds(joystick.width, joystick.height):
+    #         print(f"적 총알 제거: {bullet.position}")
+    #     else:
+    #         enemy_bullets_to_keep.append(bullet)
+    # enemy_bullets = enemy_bullets_to_keep  # 유효한 총알만 유지
+    
+    # -------------------------------------- --------------------------------------------- 출력 부분
+        
+    cropped_background = scroller.get_cropped_image()   # 현재 스크롤 상태에 맞게 이미지를 가져옴
+    display.paste(cropped_background, (0, 0))           # 배경 출력
+    
+    for enemy in enemys_list:
+        if enemy.state != 'die':
+            display.paste(enemy.show_motion, (enemy.position[0], enemy.position[1]), enemy.show_motion)    
+
+    display.paste(player.show_player_motion, (player.character_x, player.character_y), player.show_player_motion)  # 플레이어 출력
+    player.player_health_bar(draw_bar)
+    
+    for bullet in bullets:          # 플레이어 총알
+        if bullet.state != 'hit':
+            bullet.draw(display)    # 총알 이미지 출력
+
+    
+    joystick.disp.image(display)
+
+    # 프레임 딜레이
+    time.sleep(0.01)  # 짧은 시간 딜레이
