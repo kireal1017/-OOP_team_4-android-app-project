@@ -87,7 +87,7 @@ class BackgroundScroller:
         if self.scroll_position <= self.maxplayerRange: # 왼쪽 끝에 도달했을 경우
             step = 0
         
-        print(self.scroll_position)                 #테스트 출력
+        print(self.scroll_position)                     # 테스트 출력
         self.scroll_position -= step
         
 
@@ -133,7 +133,7 @@ class Player:
         self.last_key_pressed = 'right'    # 마지막으로 누른 키, 첫 시작은 플레이어가 오른쪽을 바라보고 있음, None로 초기화하면 시작해서 총쏘자마자 에러 발생
         self.previous_button_state = True  # 버튼이 눌리지 않은 상태로 시작
         
-        self.background_state = 'midnight'  # 이 프로퍼티는 스테이지가 바뀌면서 수정되어야됨!!!!
+        self.background_state = 'morning'  # 이 프로퍼티는 스테이지가 바뀌면서 수정되어야됨!!!!
         
         # y 이동 범위 지정
         self.y_bottom_limit = 142
@@ -150,13 +150,13 @@ class Player:
                 self.show_player_motion = player_wait
         else:
             if command['up_pressed']:       # 위로 이동
-                if self.background_state == 'morning':              # 각 스테이지 별로 y높이를 다르게 조정(바다 이미지 때문에)
+                if stage.stage_level == 1:              # 각 스테이지 별로 y높이를 다르게 조정(바다 이미지 때문에)
                     if self.character_y >= self.y_limit_morning:
                         self.character_y -= 5
-                elif self.background_state == 'sunset':
+                elif stage.stage_level == 2:
                     if self.character_y >= self.y_limit_sunset:
                         self.character_y -= 5
-                elif self.background_state == 'midnight':
+                elif stage.stage_level == 3:
                     if self.character_y >= self.y_limit_midnight:
                         self.character_y -= 5
                         
@@ -495,11 +495,11 @@ class Stage_set:
             self.goal_enemy_kill = 20
             self.spawn_enemy_num = 5
 
+
 '''-------------------------------------------------- 총알 세팅 --------------------------------------------------'''
 
 # --------------------------------------------------------------------------- 게임 시작 전 설정 사항
             
-
 #조이스틱, 캐릭터 초기화
 joystick = Joystick()
 player = Player(width = joystick.width, 
@@ -518,7 +518,6 @@ font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # 폰트 설
 font = ImageFont.truetype(font_path, 17)                            # 폰트 크기
 
 # ------------------------------------------------------------------------------ 디스플레이 관련 설정
-
 
 def player_bullet_fire():               # 플레이어 총알 발사
     if not current_button_state and player.previous_button_state:  # 버튼이 눌림 (연속적으로 눌린 상태를 읽는 것을 방지)
@@ -550,7 +549,7 @@ def spawn_random_enemies(num_enemies):  # 적 랜덤으로 생성
             'hurt': monsterLV1_hurt,
             'dead': monsterLV1_dead,
             'attack_power': 5,
-            'speed': 2,
+            'speed': 1,
             'health': 50
         }
     elif stage.enemy_type == 'monsterLV2':
@@ -560,7 +559,7 @@ def spawn_random_enemies(num_enemies):  # 적 랜덤으로 생성
             'hurt': monsterLV2_hurt,
             'dead': monsterLV2_dead,
             'attack_power': 10,
-            'speed': 3,
+            'speed': 2,
             'health': 100
         }
     elif stage.enemy_type == 'monsterLV3':
@@ -570,7 +569,7 @@ def spawn_random_enemies(num_enemies):  # 적 랜덤으로 생성
             'hurt': monsterLV3_hurt,
             'dead': monsterLV3_dead,
             'attack_power': 20,
-            'speed': 4,
+            'speed': 1,
             'health': 150
         }
         
@@ -582,7 +581,7 @@ def spawn_random_enemies(num_enemies):  # 적 랜덤으로 생성
 
         # Enemy 클래스 인스턴스 생성
         new_enemy = Enemy(
-            move2 = enemy_config['move'],
+            move = enemy_config['move'],
             attack = enemy_config['attack'],
             hurt = enemy_config['hurt'],
             dead = enemy_config['dead'],
@@ -629,8 +628,6 @@ while True:
     # ------------------------------------------------------------------------ 플레이어 및 적 이동 확인
     player.move(command) #플레이어 이동 갱신
     
-    
-    
     # ----------------------------------------------------------------------- 총알들의 유효성 및 피격 여부
      
     # 사용자 총알 위치 확인
@@ -639,7 +636,7 @@ while True:
         if bullet.is_out_of_bounds(joystick.width, joystick.height):
             print(f"총알이 화면 밖으로 나갔습니다: {bullet.x} {bullet.y}")
         elif bullet.state == 'hit':
-            print(f"총알 충돌로 제거: {bullet.x,} {bullet.y}")
+            print(f"총알 충돌로 제거: {bullet.x} {bullet.y}")
         else:
             bullet.move()
             bullet.collision_check(enemys_list)
@@ -660,9 +657,12 @@ while True:
     
     
     # 적이 모두 제거되었을 경우 새로운 적 3개 생성
-    if len(enemys_list) == 0:
+    if len(enemys_list) == 0 and player.killed_enemy <= stage.goal_enemy_kill:
         print("새로운 적을 생성합니다!")
-        enemys_list.extend(spawn_random_enemies(3))  # 적 추가 3마리 랜덤하게 생성함
+        enemys_list.extend(spawn_random_enemies(stage.spawn_enemy_num))  # 적 추가 3마리 랜덤하게 생성함
+        
+    if not(player.killed_enemy <= stage.goal_enemy_kill):
+        print("적 모두 처치")
 
     
     # 적이 플레이어를 향해 이동하고 일정 시간마다 총알 발사
@@ -712,4 +712,4 @@ while True:
     # 프레임 딜레이
     time.sleep(0.01)  # 짧은 시간 딜레이
     
-    
+  
