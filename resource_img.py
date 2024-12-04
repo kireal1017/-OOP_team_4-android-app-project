@@ -224,6 +224,36 @@ bossLV2_hurt = [
 
 bossLV3_path = 'esw_raspberryPi_game_project/image_source/character/enemy_boss/bossLV3/'
 
+bossLV3_move = [
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Walk1.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Walk2.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Walk3.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Walk4.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Walk5.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Walk6.png').convert("RGBA")
+]
 
+bossLV3_attack = [
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Attack1.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Attack2.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Attack3.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Attack4.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Attack5.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Attack6.png').convert("RGBA")
+]
+
+bossLV3_dead = [
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Death1.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Death2.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Death3.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Death4.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Death5.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Death6.png').convert("RGBA")
+]
+
+bossLV3_hurt = [
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Hurt1.png').convert("RGBA"),
+    Image.open(absolute_path + bossLV3_path + 'bossLV3_Hurt2.png').convert("RGBA")
+]
 
 enemy_test = Image.open(absolute_path + 'esw_raspberryPi_game_project/image_source/test_gif.gif').convert("RGBA")
