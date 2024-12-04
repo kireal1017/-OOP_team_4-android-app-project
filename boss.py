@@ -9,7 +9,6 @@ from digitalio import DigitalInOut, Direction
 from PIL import Image, ImageDraw, ImageFont
 from adafruit_rgb_display import st7789
 
-#from start_environment import game_wait #게임 시작화면 불러온 동시에 게임 시작함
 
 class Joystick:
     def __init__(self):
@@ -494,7 +493,6 @@ class Stage_set:
 
 # --------------------------------------------------------------------------- 게임 시작 전 설정 사항
             
-#조이스틱, 캐릭터 초기화
 # 조이스틱, 캐릭터 초기화
 joystick = Joystick()
 player = Player(width=joystick.width, 
@@ -513,6 +511,7 @@ font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # 폰트 설
 font = ImageFont.truetype(font_path, 17)  # 폰트 크기
 
 # ------------------------------------------------------------------------------ 디스플레이 관련 설정
+
 
 def player_bullet_fire():  # 플레이어 총알 발사
     if not current_button_state and player.previous_button_state:  # 버튼이 눌림 (연속적으로 눌린 상태를 방지)
@@ -588,6 +587,9 @@ def spawn_boss():
     enemys_list = [stage_boss]  # 보스 하나만 적 리스트에 추가
     return enemys_list
 
+enemys_list = spawn_boss()    # 적 리스트 초기화
+enemy_bullets = []  # 적 총알 리스트 초기화
+bullets = []        # 내 총알 리스트]
 
 # 게임 루프
 while True:
