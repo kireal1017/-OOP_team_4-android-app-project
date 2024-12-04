@@ -396,12 +396,12 @@ class Bullet:
         print(self.position, enemy.position)
           
            
-    def collision_check(self, enemys):      # 적에게 맞았는지 확인
+    def collision_check(self, enemys):              # 적에게 맞았는지 확인
         for enemy in enemys:
             collision = self.overlap(self.position, enemy.position)
             
             if collision:
-                self.image = player_bullet[1]
+                self.image = player_bullet[1]       # 이미지는 표시 되나 너무 빨라서 적용이 안되는 듯함
                 enemy.state = 'die'
                 self.state = 'hit'
     
@@ -532,11 +532,7 @@ def player_bullet_fire():               # 플레이어 총알 발사
         bullet = Bullet(player.last_key_pressed)
         bullets.append(bullet)
 
-def spawn_random_enemies(num_enemies):  # 적 랜덤으로 생성
-
-    # 랜덤한 위치에 적을 생성하는 함수
-    # num_enemies: 생성할 적의 수
-    # width, height: 스크린 크기
+def spawn_random_enemies(num_enemies):  # 적 랜덤으로 생성, num_enemies 생성할 적의 리스트를 받음
     if stage.enemy_type == 'monsterLV1':
         enemy_config = {
             'move': monsterLV1_move,
@@ -589,8 +585,65 @@ def spawn_random_enemies(num_enemies):  # 적 랜덤으로 생성
         new_enemies.append(new_enemy)
     return new_enemies
 
-# def spawn_boss(num_enemies): # 보스 생성하기
-    # 화면에 적 캐릭터가 없을 때 Enemy에서 보스 생성하기
+def spawn_boss(): # 보스 생성하기
+    if stage.boss == 'bossLV1':
+        print("LV1")
+        enemy_config = {
+            'move': bossLV1_move,
+            'attack': bossLV1_attack,
+            'hurt': bossLV1_hurt,
+            'dead': bossLV1_dead,
+            'attack_power': 10,
+            'speed': 1,
+            'health': 50
+        }
+    elif stage.boss == 'bossLV2':
+        print("LV2")
+        enemy_config = {
+            'move': bossLV2_move,
+            'attack': bossLV2_attack,
+            'hurt': bossLV2_hurt,
+            'dead': bossLV2_dead,
+            'attack_power': 20,
+            'speed': 2,
+            'health': 100
+        }
+    elif stage.boss == 'bossLV3':
+        print("LV3")
+        enemy_config = {
+            'move': bossLV3_move,
+            'attack': bossLV3_attack,
+            'hurt': bossLV3_hurt,
+            'dead': bossLV3_dead,
+            'attack_power': 10,
+            'speed': 2,
+            'health': 150
+        }
+
+    random_x = random.randint(joystick.width - 50, joystick.width)  # 보스 위치를 화면의 오른쪽 끝 근처로 설정
+    random_y = random.randint(player.y_limit_midnight + 50, player.y_bottom_limit)
+
+    # 보스의 속성 설정 (보스는 다른 몹과 다름으로 boss = True를 반환함)
+    make_boss = Enemy(
+            move = enemy_config['move'],
+            attack = enemy_config['attack'],
+            hurt = enemy_config['hurt'],
+            dead = enemy_config['dead'],
+            spawn_position = (random_x, random_y),
+            attack_power = enemy_config['attack_power'],
+            speed = enemy_config['speed'],
+            health = enemy_config['health'],
+            boss = True
+        )
+    enemys_list.append(make_boss)  # 보스를 적 목록에 추가
+    
+    
+
+def is_boss_check(enemys_list): # 적 리스트를 순회하면서 보스가 있는지 확인
+    for enemy in enemys_list:
+        if enemy.boss_check:  # 보스 여부 확인
+            return True  # 보스가 존재하면 True 반환
+    return False  # 보스가 없다면 False 반환
 
 enemys_list = []    # 적 리스트 초기화
 enemy_bullets = []  # 적 총알 리스트 초기화
@@ -647,11 +700,14 @@ while True:
     #적이 총에 맞았다면 즉시 제거 됨
     remaining_enemies = []
     for enemy in enemys_list:
-        if enemy.boss_check:                                # 적 캐릭터가 보스일 경우
-            if enemy.health >= 0:                     # 0이 아닌 동안에는
-                enemy.health -= bullet.damage         # 총알 데미지 만큼 받음
+        print("코드테스트")            
+        if enemy.boss_check:  # 적 캐릭터가 보스일 경우
+            if enemy.health > 0:  # 보스가 살아있다면
+                enemy.health -= bullet.damage  # 총알 데미지만큼 체력 감소
             else:
-                enemy.state == 'die'                  # 0이하로 체력이 떨어지면 보스도 죽음
+                if enemy.state != 'die':  # 보스가 죽었을 때만 상태 변경
+                    enemy.state = 'die'   # 보스 죽음 처리
+                    print(f"보스가 쓰러졌습니다! 위치: {enemy.position}")
         else:
             if enemy.state == 'die':
                 player.killed_enemy += 1              # 적 사살횟수 증가
@@ -663,16 +719,14 @@ while True:
     
     
     # 적이 모두 제거되었을 경우 새로운 적 3개 생성
-    if len(enemys_list) == 0 and player.killed_enemy <= stage.goal_enemy_kill:
+    if len(enemys_list) == 0 and player.killed_enemy <= stage.goal_enemy_kill:        
         print("새로운 적을 생성합니다!")
         enemys_list.extend(spawn_random_enemies(stage.spawn_enemy_num))  # 적 추가 3마리 랜덤하게 생성함
         
-    if player.killed_enemy >= stage.goal_enemy_kill:
-        print("적 모두 처치")
-        # 여기서 보스 생성을 해야함, 그러나 이 함수는 이미 조건을 충족했으므로 계속해서 반복 호출됨
-        
-        
-
+    # if player.killed_enemy >= stage.goal_enemy_kill:
+    #     print("적 모두 처치")
+    
+    
     
     # 적이 플레이어를 향해 이동하고 일정 시간마다 총알 발사
     current_time = time.time()
@@ -717,8 +771,12 @@ while True:
 
     
     joystick.disp.image(display)
+    
+    if player.killed_enemy >= stage.goal_enemy_kill:
+        break    
 
     # 프레임 딜레이
     time.sleep(0.01)  # 짧은 시간 딜레이
     
-  
+
+print("반복문 빠져 나옴")
