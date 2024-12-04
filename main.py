@@ -118,6 +118,7 @@ class Player:
         #실제로 플레이어 모션을 보여줄 이미지
         self.show_player_motion = player_wait       # 기본으로 보이는건 대기 이미지
         self.player_move_frames = player_move       # 움직이기
+        self.player_dead_frames = player_dead       # 사망
         
         # 캐릭터 이동 관련 커맨드
         self.command = {'move': False, 'up_pressed': False , 'down_pressed': False, 
@@ -207,7 +208,7 @@ class Player:
         
         if self.health <= 0:
             print('플레이어 사망')
-            return True             # 게임 종료
+            return True
         
         return False                # 죽기 전까지는 게임 마저 실행
     
@@ -253,6 +254,16 @@ class Player:
              self.character_y + bar_height // 2 + y_calibrate],
             fill = fill_color
         )
+        
+    def player_die(self):
+        self.state = 'dead'  # 플레이어 상태를 죽음으로 변경
+        if self.last_key_pressed == 'left':
+            self.show_player_motion = self.player_dead_frames[self.frame_index].transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
+            self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)        # 이건 나중에 파일 참조 할 것
+        elif self.last_key_pressed == 'right':
+            self.show_player_motion = self.player_dead_frames[self.frame_index]
+            self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)
+            
 
 class Enemy:
     def __init__(self, move, attack, hurt, dead, spawn_position, attack_power, speed, health, boss):
@@ -723,7 +734,7 @@ while True:
         enemys_list.extend(spawn_random_enemies(stage.spawn_enemy_num))  # 적 추가 생성, 스테이지별로 생성 횟수 다름    
     
     
-    # 적이 플레이어를 향해 이동하고 일정 시간마다 총알 발사
+    # 적이 플레이어를 향해 이동하고 일정 시간마다 공격
     current_time = time.time()
     for enemy in enemys_list:
         if enemy.state == 'alive':
@@ -738,7 +749,13 @@ while True:
     
     for enemy in enemys_list:
         if enemy.state != 'die':
-            display.paste(enemy.show_motion, (enemy.position[0], enemy.position[1]), enemy.show_motion)    
+            display.paste(enemy.show_motion, (enemy.position[0], enemy.position[1]), enemy.show_motion)   
+            
+    if player.health <= 0:                      # 플레이어 체력이 0이하면 
+        for _ in range(len(player_dead)):
+            player.player_die()
+        draw_bar.text((40, 180), "Game Over!", font=font, fill=(255, 0, 0))
+        goalState = True
 
     display.paste(player.show_player_motion, (player.character_x, player.character_y), player.show_player_motion)  # 플레이어 출력
     player.player_health_bar(draw_bar)
@@ -748,7 +765,7 @@ while True:
             bullet.draw(display)    # 총알 이미지 출력
             
     if len(enemys_list) == 0 and player.killed_enemy >= stage.goal_enemy_kill:
-        draw_bar.text((30, 180), f"{stage.stage_level} Level Clear! ", font=font, fill=(0, 0, 255))
+        draw_bar.text((30, 150), f"{stage.stage_level} Level Clear! ", font=font, fill=(0, 0, 255))
         goalState = True
 
     joystick.disp.image(display)
