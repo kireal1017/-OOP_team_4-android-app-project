@@ -255,7 +255,7 @@ class Player:
         )
 
 class Enemy:
-    def __init__(self, move, attack, hurt, dead, spawn_position, attack_power, speed, health):
+    def __init__(self, move, attack, hurt, dead, spawn_position, attack_power, speed, health, boss):
         self.move_img = move
         self.attack_img = attack
         self.hurt_img = hurt
@@ -266,6 +266,7 @@ class Enemy:
         self.health = health           # 적의 체력
         self.last_attack_time = 0      # 마지막 공격 시간 기록
         self.state = 'alive'
+        self.boss_check = boss
         
         self.approach = False
         
@@ -374,12 +375,9 @@ class Bullet:
         self.x = player.character_x + offset_x
         self.y = player.character_y + offset_y
         
-        # self.x = player.character_x # + 55    # 총알의 시작 위치, 캐릭터 이미지를 생각해서 조금 값을 보정함
-        # self.y = player.character_y # + 58
-        
         self.position = [self.x, self.y, self.x + self.x_size, self.y + self.y_size]
         
-        self.direction = {'left' : False, 'right' : False}
+        self.direction = {'left' : False, 'right' : False}      # 좌우 확인
 
         if last_key_pressed == 'right':
             self.direction['right'] = True
@@ -403,18 +401,10 @@ class Bullet:
             collision = self.overlap(self.position, enemy.position)
             
             if collision:
-                print("T")
                 enemy.state = 'die'
                 self.state = 'hit'
-            else:
-                print("F")
     
-    
-    def draw(self, draw_surface): #현재 총알 이미지를 화면에 출력, (x, y) 좌표는 이미지의 좌상단을 기준으로 출력
-        if player.last_key_pressed == 'right':
-            draw_surface.paste(self.image, (self.x, self.y), self.image)  # 총알 이미지 출력
-        else:
-            draw_surface.paste(self.image.transpose(Image.FLIP_LEFT_RIGHT), (self.x, self.y), self.image.transpose(Image.FLIP_LEFT_RIGHT))
+
     
     def overlap(self, ego_position, other_position):
         print("over")
@@ -496,7 +486,7 @@ class Stage_set:
             self.spawn_enemy_num = 5
 
 
-'''-------------------------------------------------- 총알 세팅 --------------------------------------------------'''
+'''-------------------------------------------------- 스테이지 세팅 --------------------------------------------------'''
 
 # --------------------------------------------------------------------------- 게임 시작 전 설정 사항
             
@@ -588,7 +578,8 @@ def spawn_random_enemies(num_enemies):  # 적 랜덤으로 생성
             spawn_position = (random_x, random_y),
             attack_power = enemy_config['attack_power'],
             speed = enemy_config['speed'],
-            health = enemy_config['health']
+            health = enemy_config['health'],
+            boss = False
         )
         new_enemies.append(new_enemy)
     return new_enemies
