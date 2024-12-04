@@ -512,6 +512,8 @@ draw_bar = ImageDraw.Draw(display)                                              
 font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # 폰트 설정
 font = ImageFont.truetype(font_path, 25)                            # 폰트 크기
 
+goalState = False                                                   # 게임 자동으로 종료하기 위한 변수
+
 # ------------------------------------------------------------------------------ 디스플레이 관련 설정
 
 def player_bullet_fire():               # 플레이어 총알 발사
@@ -747,8 +749,14 @@ while True:
             
     if len(enemys_list) == 0 and player.killed_enemy >= stage.goal_enemy_kill:
         draw_bar.text((30, 180), f"{stage.stage_level} Level Clear! ", font=font, fill=(0, 0, 255))
+        goalState = True
 
     joystick.disp.image(display)
+    
+    if goalState:
+        joystick.disp.image(display)
+        time.sleep(2)
+        break
     
     # 프레임 딜레이
     time.sleep(0.01)  # 짧은 시간 딜레이
