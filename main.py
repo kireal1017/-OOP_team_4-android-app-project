@@ -379,7 +379,6 @@ class Bullet:
         if last_key_pressed == 'left':
             self.direction['left'] = True
     
-
         
     def move(self):
         if self.direction['left']:
@@ -424,15 +423,11 @@ class Bullet:
         # 총알과 적이 겹치는지 확인
         return not (
             ego_position[2] < other_position[0] or  # image1의 오른쪽이 image2의 왼쪽보다 왼쪽
-            ego_position[0] > other_position[2] or  # image1의 왼쪽이 image2의 오른쪽보다 오른쪽
-            ego_position[3] < other_position[1] or  # image1의 아래쪽이 image2의 위쪽보다 위
+            # ego_position[0] > other_position[2] or  # image1의 왼쪽이 image2의 오른쪽보다 오른쪽
+            # ego_position[3] < other_position[1] or  # image1의 아래쪽이 image2의 위쪽보다 위
             ego_position[1] > other_position[3]     # image1의 위쪽이 image2의 아래쪽보다 아래
         )
         
-        
-        
-    
-    
     def is_out_of_bounds(self, width, height):                            # 총알이 화면 경계를 벗어났는지 확인하는 함수
         if self.x < 0 or self.x > width or self.y < 0 or self.y > height:
             return True
@@ -511,25 +506,13 @@ def spawn_random_enemies(num_enemies):               # 적 랜덤으로 생성
     """
     new_enemies = []
     for _ in range(num_enemies):
-        # x = random.randint(50, width - 50)  # 화면 가장자리에서 벗어나도록 최소/최대 값 설정
-        # y = random.randint(50, height - 50)
-        new_enemies.append(enemyLV1)
+        random_x = random.choice([random.randint(0, 0), random.randint(joystick.width - 40, joystick.width)]) 
+        random_y = random.randint(player.y_limit_midnight + 50, player.y_bottom_limit)
+        new_enemies.append(Enemy(monsterLV2_move, monsterLV2_attack, monsterLV2_hurt, monsterLV2_dead, 
+                                 (random_x, random_y), 10, 1, 100))
     return new_enemies
 
-def check_collision(rect1, rect2):                                          # 총알 맞았는지 확인 함수
-    """
-    두 사각형(rect1, rect2)이 겹치는지 확인하는 함수
-    rect1, rect2: [x1, y1, x2, y2] 형태의 사각형 좌표 리스트
-    return: True if the rectangles overlap, False otherwise
-    """
-    return not (
-        rect1[2] < rect2[0] or  # rect1의 오른쪽이 rect2의 왼쪽보다 왼쪽
-        rect1[0] > rect2[2] or  # rect1의 왼쪽이 rect2의 오른쪽보다 오른쪽
-        rect1[3] < rect2[1] or  # rect1의 아래쪽이 rect2의 위쪽보다 위
-        rect1[1] > rect2[3]     # rect1의 위쪽이 rect2의 아래쪽보다 아래
-    )
-
-enemys_list = [enemyLV1]    # 적 리스트 초기화
+enemys_list = []    # 적 리스트 초기화
 enemy_bullets = []  # 적 총알 리스트 초기화
 bullets = []        # 내 총알 리스트
 
@@ -594,9 +577,9 @@ while True:
     
     
     # 적이 모두 제거되었을 경우 새로운 적 3개 생성
-    # if len(enemys_list) == 0:
-    #     print("새로운 적을 생성합니다!")
-    #     enemys_list.extend(spawn_random_enemies(3))  # 적 추가
+    if len(enemys_list) == 0:
+        print("새로운 적을 생성합니다!")
+        enemys_list.extend(spawn_random_enemies(3))  # 적 추가
 
     
     # 적이 플레이어를 향해 이동하고 일정 시간마다 총알 발사
@@ -631,8 +614,7 @@ while True:
     
     for enemy in enemys_list:
         if enemy.state != 'die':
-            display.paste(enemyLV1.show_motion, (enemyLV1.position[0], enemyLV1.position[1]), enemyLV1.show_motion)
-    
+            display.paste(enemy.show_motion, (enemy.position[0], enemy.position[1]), enemy.show_motion)    
 
     display.paste(player.show_player_motion, (player.character_x, player.character_y), player.show_player_motion)  # 플레이어 출력
     player.player_health_bar(draw_bar)
