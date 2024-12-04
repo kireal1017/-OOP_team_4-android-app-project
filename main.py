@@ -128,6 +128,8 @@ class Player:
         self.last_damage_time = 0    # 마지막으로 데미지 받은 시간
         self.invincibility_time = 2  # 데미지 입지 않는 무적 타임 (2초)
         
+        self.killed_enemy = 0        # 적 처치 횟수
+        
         self.last_key_pressed = 'right'    # 마지막으로 누른 키, 첫 시작은 플레이어가 오른쪽을 바라보고 있음, None로 초기화하면 시작해서 총쏘자마자 에러 발생
         self.previous_button_state = True  # 버튼이 눌리지 않은 상태로 시작
         
@@ -354,8 +356,6 @@ class Enemy:
             self.last_shot_time = current_time          # 마지막 공격 시간 갱신
             print(f"적이 플레이어를 공격! {self.attack} 데미지 입음")
     
-               
-    
 '''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
 
 class Bullet:
@@ -367,10 +367,17 @@ class Bullet:
         
         self.x_size, self.y_size = self.image.size
         
-        self.x = player.character_x + 55    # 총알의 시작 위치, 캐릭터 이미지를 생각해서 조금 값을 보정함
-        self.y = player.character_y + 58
+        offset_x = 55  # 플레이어 총구의 X축 위치 조정
+        offset_y = 58  # 플레이어 총구의 Y축 위치 조정
+
+        # 플레이어 위치와 오프셋을 기준으로 총알 위치 설정
+        self.x = player.character_x + offset_x
+        self.y = player.character_y + offset_y
         
-        self.position = [self.x - 55, self.y - 58, self.x_size, self.y_size]
+        # self.x = player.character_x # + 55    # 총알의 시작 위치, 캐릭터 이미지를 생각해서 조금 값을 보정함
+        # self.y = player.character_y # + 58
+        
+        self.position = [self.x, self.y, self.x + self.x_size, self.y + self.y_size]
         
         self.direction = {'left' : False, 'right' : False}
 
@@ -387,7 +394,7 @@ class Bullet:
         if self.direction['right']:
             self.x += self.speed
         
-        self.position = [self.x - 55, self.y - 58, (self.x - 55) + self.x_size, (self.y - 58) + self.y_size] #위치 업데이트
+        self.position = [self.x, self.y, self.x + self.x_size, self.y + self.y_size] #위치 업데이트
         print(self.position, enemy.position)
           
            
@@ -419,12 +426,13 @@ class Bullet:
         return:
             True: 겹침, False: 겹치지 않음
         """
+        print(f"총알 위치: {ego_position}, 적 위치: {other_position}")
              
         # 총알과 적이 겹치는지 확인
         return not (
             ego_position[2] < other_position[0] or  # image1의 오른쪽이 image2의 왼쪽보다 왼쪽
-            # ego_position[0] > other_position[2] or  # image1의 왼쪽이 image2의 오른쪽보다 오른쪽
-            # ego_position[3] < other_position[1] or  # image1의 아래쪽이 image2의 위쪽보다 위
+            ego_position[0] > other_position[2] or  # image1의 왼쪽이 image2의 오른쪽보다 오른쪽
+            ego_position[3] < other_position[1] or  # image1의 아래쪽이 image2의 위쪽보다 위
             ego_position[1] > other_position[3]     # image1의 위쪽이 image2의 아래쪽보다 아래
         )
         
@@ -457,6 +465,38 @@ class EnemyBullet:
 
 '''-------------------------------------------------- 총알 세팅 --------------------------------------------------'''
 
+class Stage_set:
+    def __init__(self, stage_level):
+        self.stage_level = stage_level
+        self.background = None
+        self.enemy_type = None
+        self.boss = None
+        self.goal_enemy_kill = None
+        self.spawn_enemy_num = None
+        self.stage_setting()
+    
+    def stage_setting(self):
+        if self.stage_level == 1:
+            self.background = morning_background
+            self.enemy_type = 'monsterLV1'
+            self.boss = 'bossLV1'
+            self.goal_enemy_kill = 10
+            self.spawn_enemy_num = 3
+        elif self.stage_level == 2:
+            self.background = sunset_background
+            self.enemy_type = 'monsterLV2'
+            self.boss = 'bossLV2'
+            self.goal_enemy_kill = 15
+            self.spawn_enemy_num = 4
+        elif self.stage_level == 3:
+            self.background = midnight_background
+            self.enemy_type = 'monsterLV3'
+            self.boss = 'bossLV3'
+            self.goal_enemy_kill = 20
+            self.spawn_enemy_num = 5
+
+'''-------------------------------------------------- 총알 세팅 --------------------------------------------------'''
+
 # --------------------------------------------------------------------------- 게임 시작 전 설정 사항
             
 
@@ -467,9 +507,9 @@ player = Player(width = joystick.width,
                 character_size_x = 96, 
                 character_size_y = 96) #캐릭터 사이즈 96 x 96
 
-enemyLV1 = Enemy(monsterLV2_move, monsterLV2_attack, monsterLV2_hurt, monsterLV2_dead, (200, 200), 10, 1, 100)
+stage = Stage_set(stage_level = 1)  # 스테이지 정하기
 
-scroller = BackgroundScroller(midnight_background, joystick.width, joystick.height) # 배경 클래스 초기화
+scroller = BackgroundScroller(stage.background, joystick.width, joystick.height) # 배경 클래스 초기화
 display = Image.new("RGB", (joystick.width, joystick.height))                       # 디스플레이 초기화
 
 draw_bar = ImageDraw.Draw(display)                                                  # 체력 바 및 경고창을 그리기 위한 draw
@@ -480,7 +520,7 @@ font = ImageFont.truetype(font_path, 17)                            # 폰트 크
 # ------------------------------------------------------------------------------ 디스플레이 관련 설정
 
 
-def player_bullet_fire():    #플레이어 총알 발사
+def player_bullet_fire():               # 플레이어 총알 발사
     if not current_button_state and player.previous_button_state:  # 버튼이 눌림 (연속적으로 눌린 상태를 읽는 것을 방지)
         for i in range(len(player_shoot)):
             if player.last_key_pressed == 'right':
@@ -498,18 +538,60 @@ def player_bullet_fire():    #플레이어 총알 발사
         bullet = Bullet(player.last_key_pressed)
         bullets.append(bullet)
 
-def spawn_random_enemies(num_enemies):               # 적 랜덤으로 생성
-    """
-    랜덤한 위치에 적을 생성하는 함수
-    num_enemies: 생성할 적의 수
-    width, height: 스크린 크기
-    """
+def spawn_random_enemies(num_enemies):  # 적 랜덤으로 생성
+
+    # 랜덤한 위치에 적을 생성하는 함수
+    # num_enemies: 생성할 적의 수
+    # width, height: 스크린 크기
+    if stage.enemy_type == 'monsterLV1':
+        enemy_config = {
+            'move': monsterLV1_move,
+            'attack': monsterLV1_attack,
+            'hurt': monsterLV1_hurt,
+            'dead': monsterLV1_dead,
+            'attack_power': 5,
+            'speed': 2,
+            'health': 50
+        }
+    elif stage.enemy_type == 'monsterLV2':
+        enemy_config = {
+            'move': monsterLV2_move,
+            'attack': monsterLV2_attack,
+            'hurt': monsterLV2_hurt,
+            'dead': monsterLV2_dead,
+            'attack_power': 10,
+            'speed': 3,
+            'health': 100
+        }
+    elif stage.enemy_type == 'monsterLV3':
+        enemy_config = {
+            'move': monsterLV3_move,
+            'attack': monsterLV3_attack,
+            'hurt': monsterLV3_hurt,
+            'dead': monsterLV3_dead,
+            'attack_power': 20,
+            'speed': 4,
+            'health': 150
+        }
+        
+    
     new_enemies = []
     for _ in range(num_enemies):
         random_x = random.choice([random.randint(0, 0), random.randint(joystick.width - 40, joystick.width)]) 
         random_y = random.randint(player.y_limit_midnight + 50, player.y_bottom_limit)
-        new_enemies.append(Enemy(monsterLV2_move, monsterLV2_attack, monsterLV2_hurt, monsterLV2_dead, 
-                                 (random_x, random_y), 10, 1, 100))
+
+        # Enemy 클래스 인스턴스 생성
+        new_enemy = Enemy(
+            move2 = enemy_config['move'],
+            attack = enemy_config['attack'],
+            hurt = enemy_config['hurt'],
+            dead = enemy_config['dead'],
+            spawn_position = (random_x, random_y),
+            attack_power = enemy_config['attack_power'],
+            speed = enemy_config['speed'],
+            health = enemy_config['health']
+        )
+        new_enemies.append(new_enemy)
     return new_enemies
 
 enemys_list = []    # 적 리스트 초기화
@@ -562,7 +644,7 @@ while True:
             bullet.move()
             bullet.collision_check(enemys_list)
             bullets_to_keep.append(bullet)  # 유효한 총알만 유지
-    bullets = bullets_to_keep  # 유효한 총알로 리스트 업데이트
+    bullets = bullets_to_keep               # 유효한 총알로 리스트 업데이트
     
     #print(len(bullets_to_keep)) # 총알 갯수 확인하기
     
@@ -570,7 +652,8 @@ while True:
     remaining_enemies = []
     for enemy in enemys_list:
         if enemy.state == 'die':
-            print(f"적 제거: {enemy.position}")
+            player.killed_enemy += 1          # 적 사살횟수 증가
+            print(f"적 제거: {enemy.position} / {player.killed_enemy}")
         else:
             remaining_enemies.append(enemy)  # 유효한 적만 유지
     enemys_list = remaining_enemies          # 유효한 적으로 리스트 업데이트
@@ -579,14 +662,14 @@ while True:
     # 적이 모두 제거되었을 경우 새로운 적 3개 생성
     if len(enemys_list) == 0:
         print("새로운 적을 생성합니다!")
-        enemys_list.extend(spawn_random_enemies(3))  # 적 추가
+        enemys_list.extend(spawn_random_enemies(3))  # 적 추가 3마리 랜덤하게 생성함
 
     
     # 적이 플레이어를 향해 이동하고 일정 시간마다 총알 발사
     current_time = time.time()
     for enemy in enemys_list:
         if enemy.state == 'alive':
-            enemy.move_towards(player.center, min_distance = 10)  # 플레이어를 향해 이동, 일정 거리 떨어져서 옴
+            enemy.move_towards(player.center, min_distance = 20)  # 플레이어를 향해 이동, 일정 거리 떨어져서 옴
             if enemy.approach:
                 enemy.attack_player(current_time)
             
