@@ -10,7 +10,7 @@ from digitalio import DigitalInOut, Direction
 from PIL import Image, ImageDraw, ImageFont
 from adafruit_rgb_display import st7789
 
-#from start_environment import game_wait #게임 시작화면 불러온 동시에 게임 시작함
+from start_environment import game_wait #게임 시작화면 불러온 동시에 게임 시작함
 
 class Joystick:
     def __init__(self):
@@ -647,7 +647,7 @@ enemys_list = []    # 적 리스트 초기화
 enemy_bullets = []  # 적 총알 리스트 초기화
 bullets = []        # 내 총알 리스트
 
-#game_wait() # ---------------------------------------------------------------------- 게임 시작 전 출력 화면
+game_wait() # ---------------------------------------------------------------------- 게임 시작 전 출력 화면
 
 while True:
     command = {'move': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
