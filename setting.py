@@ -1,5 +1,7 @@
 from resource_img import *
 import time
+import random
+
 import numpy as np
 from colorsys import hsv_to_rgb
 import board
@@ -7,7 +9,9 @@ from digitalio import DigitalInOut, Direction
 from PIL import Image, ImageDraw, ImageFont
 from adafruit_rgb_display import st7789
 
+from start_environment import game_wait #게임 시작화면 불러온 동시에 게임 시작함
 
+game_over = True        #게임이 오버되었는지 정상적으로 끝났는지 확인하기 위한 변수
 
 class Joystick:
     def __init__(self):
@@ -115,6 +119,7 @@ class Player:
         #실제로 플레이어 모션을 보여줄 이미지
         self.show_player_motion = player_wait       # 기본으로 보이는건 대기 이미지
         self.player_move_frames = player_move       # 움직이기
+        self.player_dead_frames = player_dead       # 사망
         
         # 캐릭터 이동 관련 커맨드
         self.command = {'move': False, 'up_pressed': False , 'down_pressed': False, 
@@ -204,7 +209,7 @@ class Player:
         
         if self.health <= 0:
             print('플레이어 사망')
-            return True             # 게임 종료
+            return True
         
         return False                # 죽기 전까지는 게임 마저 실행
     
@@ -250,6 +255,16 @@ class Player:
              self.character_y + bar_height // 2 + y_calibrate],
             fill = fill_color
         )
+        
+    def player_die(self):
+        self.state = 'dead'  # 플레이어 상태를 죽음으로 변경
+        if self.last_key_pressed == 'left':
+            self.show_player_motion = self.player_dead_frames[self.frame_index].transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
+            self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)        # 이건 나중에 파일 참조 할 것
+        elif self.last_key_pressed == 'right':
+            self.show_player_motion = self.player_dead_frames[self.frame_index]
+            self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)
+            
 
 class Enemy:
     def __init__(self, move, attack, hurt, dead, spawn_position, attack_power, speed, health, boss):
@@ -473,19 +488,21 @@ class Stage_set:
             self.background = morning_background
             self.enemy_type = 'monsterLV1'
             self.boss = 'bossLV1'
-            self.goal_enemy_kill = 10
+            self.goal_enemy_kill = 20
             self.spawn_enemy_num = 3
         elif self.stage_level == 2:
             self.background = sunset_background
             self.enemy_type = 'monsterLV2'
             self.boss = 'bossLV2'
-            self.goal_enemy_kill = 15
+            self.goal_enemy_kill = 30
             self.spawn_enemy_num = 4
         elif self.stage_level == 3:
             self.background = midnight_background
             self.enemy_type = 'monsterLV3'
             self.boss = 'bossLV3'
-            self.goal_enemy_kill = 20
+            self.goal_enemy_kill = 40
             self.spawn_enemy_num = 5
 
 '''-------------------------------------------------- 스테이지 세팅 --------------------------------------------------'''
+
+# --------------------------------------------------------------------------- 게임 시작 전 설정 사항

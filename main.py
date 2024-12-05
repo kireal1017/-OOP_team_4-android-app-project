@@ -78,10 +78,7 @@ def run_game(files):
         print(f"현재 실행 중인 파일 : {file}")
         result = subprocess.run(['python', file]) # 파일 실행
 
-        if "GAME_OVER" in result.stdout:  # 파일에서 출력된 'GAME_OVER' 확인
-            print("게임 오버 상태 확인")
-            game_over = True  # 게임 오버 상태로 변경
-            break  # 게임 오버가 되면 파일 실행을 중단
+
 
 
         # 게임 실행 중 게임 오버 상태가 되면
