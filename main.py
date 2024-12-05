@@ -1,3 +1,4 @@
+from start_environment import game_wait
 from setting import *
 from resource_img import *
 import time, random
@@ -48,7 +49,7 @@ def spawn_random_enemies(num_enemies):          # 적 랜덤으로 생성, num_e
             'attack': monsterLV1_attack,
             'hurt': monsterLV1_hurt,
             'dead': monsterLV1_dead,
-            'attack_power': 20,
+            'attack_power': 5,
             'speed': 1,
             'health': 50
         }
@@ -277,7 +278,7 @@ def game(set_level):                            # 게임 실행 함수
         if len(enemys_list) == 0 and player.killed_enemy >= stage.goal_enemy_kill:
             draw_bar.text((30, 150), f"{stage.stage_level} Level Clear! ", font=font, fill=(0, 0, 255))
             if stage.stage_level == 3:
-                draw_bar.text((60, 210), "B : Restart", font=sub_font, fill=(0, 255, 0))
+                draw_bar.text((45, 210), "B : Restart", font=sub_font, fill=(0, 255, 0))
             goalState = True
 
         joystick.disp.image(display)
@@ -303,6 +304,8 @@ def game(set_level):                            # 게임 실행 함수
 
 set_level = 1                                   # 처음 스테이지 레벨
 
+
+game_wait()                                     # 게임 시작 전 대기화면, 한 번만 재생
 
 while True:                                     # 게임 무한 반복함
     
