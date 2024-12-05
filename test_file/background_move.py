@@ -1,3 +1,4 @@
+'''
 from setting import Joystick, Character, BackgroundScroller
 from resource_img import morning_background, sunset_background, midnight_background
 from PIL import Image
@@ -78,3 +79,9 @@ while True:
 
     # 프레임 딜레이
     time.sleep(0.03)
+    '''
+    
+from player_animation import game
+
+print("게임 시작")
+game()

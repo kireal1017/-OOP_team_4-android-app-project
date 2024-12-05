@@ -98,10 +98,13 @@ class Player:
     def __init__(self, width, height, character_size_x, character_size_y):
         self.state = None
         #캐릭터 초기 위치
-        self.character_x = 240 // 2 - character_size_x // 2
-        self.character_y = 240 // 2 - character_size_y // 2
+        self.character_size_x = character_size_x
+        self.character_size_y = character_size_y
         
-        self.character_size = np.array([character_size_x, character_size_y]) # 캐릭터 크기
+        self.character_x = 240 // 2 - self.character_size_x // 2
+        self.character_y = 240 // 2 - self.character_size_y // 2
+        
+        self.character_size = np.array([self.character_size_x, self.character_size_y]) # 캐릭터 크기
         self.position = np.array([self.character_x, self.character_y])       # 캐릭터 좌상단 좌표
 
         # 캐릭터의 중심 좌표 계산 (좌상단 기준으로 크기 반영)
@@ -138,7 +141,7 @@ class Player:
         self.y_limit_midnight = 77
         
 
-    def move(self, command = None):
+    def move(self, scroller, stage, command = None):
         if command['move'] == False:
             if self.last_key_pressed == 'left': #왼쪽 키를 마지막으로 누르면 대기 이미지도 반전
                 self.show_player_motion = player_wait.transpose(Image.FLIP_LEFT_RIGHT)
@@ -215,14 +218,9 @@ class Player:
             self.health = self.max_health
             
     def player_health_bar(self, draw_bar):     # 체력 바 생성
-        """
-        체력 바를 그리는 함수
-        draw: ImageDraw 객체
-        position: 체력 바의 중심 위치 (x, y)
-        width, height: 체력 바 크기
-        health: 현재 체력
-        max_health: 최대 체력
-        """
+        # health: 현재 체력
+        # max_health: 지정된 최대 체력 값
+
         x_calibrate = 45
         y_calibrate = 30
         
@@ -258,6 +256,49 @@ class Player:
         elif self.last_key_pressed == 'right':
             self.show_player_motion = self.player_dead_frames[self.frame_index]
             self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)
+    
+    def player_state_reset(self):
+        self.state = None
+        #캐릭터 초기 위치
+        self.character_x = 240 // 2 - self.character_size_x // 2
+        self.character_y = 240 // 2 - self.character_size_y // 2
+        
+        self.character_size = np.array([self.character_size_x, self.character_size_y]) # 캐릭터 크기
+        self.position = np.array([self.character_x, self.character_y])       # 캐릭터 좌상단 좌표
+
+        # 캐릭터의 중심 좌표 계산 (좌상단 기준으로 크기 반영)
+        self.center = self.position + (self.character_size // 2)  # 중심 좌표 계산
+        
+        #캐릭터 몇번째 프레임에 있는지 
+        self.frame_index = 0
+        
+        #실제로 플레이어 모션을 보여줄 이미지
+        self.show_player_motion = player_wait       # 기본으로 보이는건 대기 이미지
+        self.player_move_frames = player_move       # 움직이기
+        self.player_dead_frames = player_dead       # 사망
+        
+        # 캐릭터 이동 관련 커맨드
+        self.command = {'move': False, 'up_pressed': False , 'down_pressed': False, 
+                        'left_pressed': False, 'right_pressed': False}
+        
+        self.health = 100            # 내 체력
+        self.max_health = 100        # 치료를 염두해둔 최대 체력
+        self.last_damage_time = 0    # 마지막으로 데미지 받은 시간
+        self.invincibility_time = 2  # 데미지 입지 않는 무적 타임 (2초)
+        
+        self.killed_enemy = 0        # 적 처치 횟수
+        
+        self.last_key_pressed = 'right'    # 마지막으로 누른 키, 첫 시작은 플레이어가 오른쪽을 바라보고 있음, None로 초기화하면 시작해서 총쏘자마자 에러 발생
+        self.previous_button_state = True  # 버튼이 눌리지 않은 상태로 시작
+        
+        self.background_state = 'morning'  # 이 프로퍼티는 스테이지가 바뀌면서 수정되어야됨!!!!
+        
+        # y 이동 범위 지정
+        self.y_bottom_limit = 142
+        self.y_limit_morning = 72
+        self.y_limit_sunset = 97
+        self.y_limit_midnight = 77
+        
             
 
 class Enemy:
@@ -276,16 +317,15 @@ class Enemy:
         
         self.approach = False
         
-        self.frame_index = 0           # 프레임 위치
-        self.show_motion = self.move_img[0]     # 움직이는 첫 번째 이미지 출력
+        self.frame_index = 0                        # 프레임 위치
+        self.show_motion = self.move_img[0]         # 움직이는 첫 번째 이미지 출력
         
-        self.x, self.y = spawn_position        
+        self.x, self.y = spawn_position             # 스폰되는 좌표
         self.x_size, self.y_size = self.move_img[0].size
         
-        self.center = np.array([self.x + self.x_size // 2, self.y + self.y_size // 2])      # 적의 중심 값
-        # 적의 사각형 위치 (x1, y1, x2, y2) 형태
-        self.position = np.array([self.x, self.y, self.x + self.x_size, self.y + self.y_size])
-        
+        self.center = np.array([self.x + self.x_size // 2, self.y + self.y_size // 2])          # 적의 중심 값
+        self.position = np.array([self.x, self.y, self.x + self.x_size, self.y + self.y_size])  # 적의 사각형 위치 (x1, y1, x2, y2) 형태
+        self.view_direction = None
         
     def update_center(self):
         """현재 중심 좌표 업데이트"""
@@ -304,12 +344,14 @@ class Enemy:
         # x 방향으로 이동
         if player_x > enemy_x:      # 플레이어가 오른쪽에 있으면
             move_x = self.speed
+            self.view_direction = 'right'
             
             self.show_motion = self.move_img[self.frame_index]
             self.frame_index = (self.frame_index + 1) % len(self.move_img)      # 움직이는 이미지 표시
             self.show_motion
         elif player_x < enemy_x:    # 플레이어가 왼쪽에 있으면
             move_x = -self.speed
+            self.view_direction = 'left'
             
             self.show_motion = self.move_img[self.frame_index].transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
             self.frame_index = (self.frame_index + 1) % len(self.move_img)
@@ -333,40 +375,42 @@ class Enemy:
             self.position[3] += move_y  # 적의 y2 좌표 이동 (아래쪽 끝)
         
         # 중심 좌표 갱신
-        #self.position = np.array([self.x, self.y, self.x + self.x_size, self.y + self.y_size]) # 업데이트
         self.update_center()
         
-        if distance <= min_distance:                    #적이 다가 왔다면
-            self.approach = True
+        if distance <= min_distance:                    # 적이 다가 왔다면
+            self.approach = True                        # 공격을 위한 T/F
         else:
             self.approach = False
             
     
         
-    def shoot(self, player_position):
-        """
-        플레이어의 위치를 기준으로 총알 발사 방향 결정
-        player_position: [x, y] 형식의 numpy 배열로 제공
-        """
-        if player_position[0] > self.center[0]:  # 플레이어가 적의 오른쪽에 있을 때
-            direction = 'right'
-        else:  # 플레이어가 적의 왼쪽에 있을 때
-            direction = 'left'
-        return EnemyBullet(self.center, direction)
+    # def shoot(self, player, player_position):
+    #     """
+    #     플레이어의 위치를 기준으로 총알 발사 방향 결정
+    #     player_position: [x, y] 형식의 numpy 배열로 제공
+    #     """
+    #     if player_position[0] > self.center[0]:  # 플레이어가 적의 오른쪽에 있을 때
+    #         direction = 'right'
+    #     else:  # 플레이어가 적의 왼쪽에 있을 때
+    #         direction = 'left'
+    #     return EnemyBullet(self.center, direction)
     
-    def attack_player(self, current_time):
-        self.show_motion = self.attack_img[self.frame_index]
-        self.frame_index = (self.frame_index + 1) % len(self.move_img)      # 공격 이미지 표시
+    def attack_player(self, current_time, player):
+        if self.view_direction == 'left':
+            self.show_motion = self.attack_img[self.frame_index].transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
+            self.frame_index = (self.frame_index + 1) % len(self.move_img)
+        else:
+            self.show_motion = self.attack_img[self.frame_index]
+            self.frame_index = (self.frame_index + 1) % len(self.move_img)      # 공격 이미지 표시
         
-        if current_time - self.last_attack_time > 2:    # 2초가 지난 후에 공격
-            player.damage(self.attack)                  # 플레이어에게 데미지 주기
-            self.last_shot_time = current_time          # 마지막 공격 시간 갱신
-            print(f"적이 플레이어를 공격! {self.attack} 데미지 입음")
+        if current_time - self.last_attack_time > 2:                        # 2초가 지난 후에 공격
+            player.damage(self.attack,)                                     # 플레이어에게 데미지 주기
+            self.last_shot_time = current_time                              # 마지막 공격 시간 갱신
     
 '''-------------------------------------------------- 캐릭터 세팅 --------------------------------------------------'''
 
 class Bullet:
-    def __init__(self, last_key_pressed):
+    def __init__(self, last_key_pressed, character_x, character_y):
         self.speed = 10
         self.damage = 10
         self.state = None
@@ -378,8 +422,8 @@ class Bullet:
         offset_y = 58  # 플레이어 총구의 Y축 위치 조정
 
         # 플레이어 위치와 오프셋을 기준으로 총알 위치 설정
-        self.x = player.character_x + offset_x
-        self.y = player.character_y + offset_y
+        self.x = character_x + offset_x
+        self.y = character_y + offset_y
         
         self.position = [self.x, self.y, self.x + self.x_size, self.y + self.y_size]
         
@@ -391,7 +435,7 @@ class Bullet:
             self.direction['left'] = True
     
         
-    def move(self):
+    def move(self, enemy):
         if self.direction['left']:
             self.x -= self.speed
             
@@ -413,7 +457,7 @@ class Bullet:
                 enemy.state = 'die'
                 self.state = 'hit'
     
-    def draw(self, draw_surface): #현재 총알 이미지를 화면에 출력, (x, y) 좌표는 이미지의 좌상단을 기준으로 출력
+    def draw(self, draw_surface, player): #현재 총알 이미지를 화면에 출력, (x, y) 좌표는 이미지의 좌상단을 기준으로 출력
         if player.last_key_pressed == 'right':
             draw_surface.paste(self.image, (self.x, self.y), self.image)  # 총알 이미지 출력
         else:
