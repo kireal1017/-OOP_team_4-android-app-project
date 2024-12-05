@@ -1,6 +1,5 @@
 from resource_img import *
 import time
-
 import numpy as np
 from colorsys import hsv_to_rgb
 import board
@@ -101,8 +100,8 @@ class Player:
         self.character_size_x = character_size_x
         self.character_size_y = character_size_y
         
-        self.character_x = 240 // 2 - self.character_size_x // 2
-        self.character_y = 240 // 2 - self.character_size_y // 2
+        self.character_x = width // 2 - self.character_size_x // 2
+        self.character_y = height // 2 - self.character_size_y // 2
         
         self.character_size = np.array([self.character_size_x, self.character_size_y]) # 캐릭터 크기
         self.position = np.array([self.character_x, self.character_y])       # 캐릭터 좌상단 좌표
@@ -131,8 +130,6 @@ class Player:
         
         self.last_key_pressed = 'right'    # 마지막으로 누른 키, 첫 시작은 플레이어가 오른쪽을 바라보고 있음, None로 초기화하면 시작해서 총쏘자마자 에러 발생
         self.previous_button_state = True  # 버튼이 눌리지 않은 상태로 시작
-        
-        self.background_state = 'morning'  # 이 프로퍼티는 스테이지가 바뀌면서 수정되어야됨!!!!
         
         # y 이동 범위 지정
         self.y_bottom_limit = 142
@@ -167,7 +164,7 @@ class Player:
                 
             if command['left_pressed']:     # 왼쪽 이동
                 self.show_player_motion = self.player_move_frames[self.frame_index].transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
-                self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)        # 이건 나중에 파일 참조 할 것
+                self.frame_index = (self.frame_index + 1) % len(self.player_move_frames)
                 if self.character_x >= 10:
                     self.character_x -= 5
                 else:
@@ -190,8 +187,7 @@ class Player:
             self.position = np.array([self.character_x, self.character_y])
             self.center = self.position + (self.character_size // 2)
             
-    
-    
+            
     def damage(self, hit_damage):                   # 플레이어가 데미지 입는 부분
         current_time = time.time()
         
@@ -261,12 +257,6 @@ class Player:
         self.character_x = 240 // 2 - self.character_size_x // 2
         self.character_y = 240 // 2 - self.character_size_y // 2
         
-        self.character_size = np.array([self.character_size_x, self.character_size_y]) # 캐릭터 크기
-        self.position = np.array([self.character_x, self.character_y])       # 캐릭터 좌상단 좌표
-
-        # 캐릭터의 중심 좌표 계산 (좌상단 기준으로 크기 반영)
-        self.center = self.position + (self.character_size // 2)  # 중심 좌표 계산
-        
         #캐릭터 몇번째 프레임에 있는지 
         self.frame_index = 0
         
@@ -288,14 +278,7 @@ class Player:
         
         self.last_key_pressed = 'right'    # 마지막으로 누른 키, 첫 시작은 플레이어가 오른쪽을 바라보고 있음, None로 초기화하면 시작해서 총쏘자마자 에러 발생
         self.previous_button_state = True  # 버튼이 눌리지 않은 상태로 시작
-        
-        self.background_state = 'morning'  # 이 프로퍼티는 스테이지가 바뀌면서 수정되어야됨!!!!
-        
-        # y 이동 범위 지정
-        self.y_bottom_limit = 142
-        self.y_limit_morning = 72
-        self.y_limit_sunset = 97
-        self.y_limit_midnight = 77
+
         
 class Enemy:
     def __init__(self, move, attack, hurt, dead, spawn_position, attack_power, speed, health, boss):
@@ -324,7 +307,7 @@ class Enemy:
         self.view_direction = None
         
     def update_center(self):
-        """현재 중심 좌표 업데이트"""
+        # 현재 중심 좌표 업데이트
         self.center = np.array([(self.position[0] + self.position[2]) / 2, (self.position[1] + self.position[3]) / 2])
         
     
@@ -334,7 +317,7 @@ class Enemy:
         # min_distance: 플레이어와 적 간 최소 거리
         
         player_x, player_y = player_position  # 플레이어 x, y좌표 분리
-        player_y = player_y + 20
+        player_y = player_y + 20              # 플레이어 이미지 크기로 인해 일부 조정
         enemy_x, enemy_y = self.center        # 적의 현재 x, y 좌표
         
         # x 방향으로 이동
@@ -378,19 +361,7 @@ class Enemy:
         else:
             self.approach = False
             
-    
-        
-    # def shoot(self, player, player_position):
-    #     """
-    #     플레이어의 위치를 기준으로 총알 발사 방향 결정
-    #     player_position: [x, y] 형식의 numpy 배열로 제공
-    #     """
-    #     if player_position[0] > self.center[0]:  # 플레이어가 적의 오른쪽에 있을 때
-    #         direction = 'right'
-    #     else:  # 플레이어가 적의 왼쪽에 있을 때
-    #         direction = 'left'
-    #     return EnemyBullet(self.center, direction)
-    
+
     def attack_player(self, current_time, player):
         if self.view_direction == 'left':
             self.show_motion = self.attack_img[self.frame_index].transpose(Image.FLIP_LEFT_RIGHT) # 이미지 반전
@@ -440,8 +411,7 @@ class Bullet:
         
         self.position = [self.x, self.y, self.x + self.x_size, self.y + self.y_size] #위치 업데이트
         # print(self.position, enemy.position)
-          
-           
+                   
     def collision_check(self, enemys):              # 적에게 맞았는지 확인
         for enemy in enemys:
             collision = self.overlap(self.position, enemy.position)
@@ -458,14 +428,12 @@ class Bullet:
             draw_surface.paste(self.image.transpose(Image.FLIP_LEFT_RIGHT), (self.x, self.y), self.image.transpose(Image.FLIP_LEFT_RIGHT))
     
     def overlap(self, ego_position, other_position):
-        """
-        두 이미지가 겹치는지 확인하는 함수
-        ego_position: [x, y, width, height] (총알)
-        other_position: [x, y, width, height] (적)
-        
-        return:
-            True: 겹침, False: 겹치지 않음
-        """
+
+        # 두 이미지가 겹치는지 확인하는 함수
+        # ego_position: [x, y, width, height] (총알)
+        # other_position: [x, y, width, height] (적)
+        # return값이 True면 겹침, False면 겹치지 않음
+
         # print(f"총알 위치: {ego_position}, 적 위치: {other_position}")
              
         # 총알과 적이 겹치는지 확인
@@ -490,7 +458,7 @@ class EnemyBullet:
         self.outline = "#FF0000"  # 빨간색 총알
 
     def move(self):
-        """총알 이동"""
+        # 총알 이동
         if self.direction == 'left':
             self.position[0] -= self.speed
             self.position[2] -= self.speed
@@ -499,7 +467,7 @@ class EnemyBullet:
             self.position[2] += self.speed
 
     def is_out_of_bounds(self, width, height):
-        """화면 경계 밖으로 나갔는지 확인"""
+        # 화면 경계 밖으로 나갔는지 확인
         x1, y1, x2, y2 = self.position
         return x2 < 0 or x1 > width
 
@@ -516,12 +484,12 @@ class Stage_set:
         self.stage_setting()
     
     def stage_setting(self):
-        if self.stage_level == 1:
-            self.background = morning_background
-            self.enemy_type = 'monsterLV1'
+        if self.stage_level == 1:                   # 1단계
+            self.background = morning_background    # 아침 배경
+            self.enemy_type = 'monsterLV1'          # 몬스터는 1레벨의 몬스터만 등장
             self.boss = 'bossLV1'
-            self.goal_enemy_kill = 20
-            self.spawn_enemy_num = 3
+            self.goal_enemy_kill = 20               # 플레이어가 몬스터 20마리를 잡아야지 해당 스테이지가 끝남
+            self.spawn_enemy_num = 3                # 동시에 스폰되는 몬스터 양
         elif self.stage_level == 2:
             self.background = sunset_background
             self.enemy_type = 'monsterLV2'

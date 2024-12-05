@@ -1,7 +1,7 @@
-from start_environment import game_wait
-from setting import *
-from resource_img import *
-import time, random
+from start_environment import game_wait     # 시작화면
+from setting import *                       # 클래스
+from resource_img import *                  # 이미지 리소스 
+import time, random                         # 게임 내에서 적과 총알 발사 버튼에 쓰이게 됨
 
 
 #조이스틱, 캐릭터 초기화
@@ -11,10 +11,9 @@ player = Player(width = joystick.width,
                 character_size_x = 96, 
                 character_size_y = 96) #캐릭터 사이즈 96 x 96
 
-
 display = Image.new("RGB", (joystick.width, joystick.height))           # 디스플레이 초기화
 
-draw_bar = ImageDraw.Draw(display)                                      # 체력 바 및 경고창을 그리기 위한 draw
+draw_bar = ImageDraw.Draw(display)                                      # 체력 바를 그리기 위한 draw
 
 font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"      # 폰트 설정
 font = ImageFont.truetype(font_path, 25)                                # 폰트 크기, 게임 클리어에서 쓰임
@@ -38,7 +37,7 @@ def player_bullet_fire(player):                 # 플레이어 총알 발사
             joystick.disp.image(display)
             
         # 총알을 발사할 때 총알 객체를 만들어 bullets 리스트에 추가
-        print(f"총알 발사, 방향: {player.last_key_pressed}")
+        # print(f"총알 방향: {player.last_key_pressed}")
         bullet = Bullet(player.last_key_pressed, player.character_x, player.character_y)
         bullets.append(bullet)
 
@@ -156,11 +155,10 @@ def is_boss_check(enemys_list):                 # 적 리스트를 순회하면�
 def game(set_level):                            # 게임 실행 함수
     global bullets, enemys_list, goalState, stage, gameover                              # 글로벌로 선언하여 다른 함수들도 참조 가능하도록
     
-
-
     if goalState == True:
-        print("goal state", goalState)
+        # print("goal state", goalState)
         return False
+    
     
     stage = Stage_set(stage_level = set_level)  # 스테이지 정하기 --------------------------------------------------------------------------------
     scroller = BackgroundScroller(stage.background, joystick.width, joystick.height)    # 배경 클래스 초기화
@@ -206,7 +204,7 @@ def game(set_level):                            # 게임 실행 함수
         bullets_to_keep = []
         for bullet in bullets:
             if bullet.is_out_of_bounds(joystick.width, joystick.height):
-                print(f"총알이 화면 밖으로 나갔습니다: {bullet.x} {bullet.y}")
+                print("총알이 화면 밖으로 이탈")
             elif bullet.state == 'hit':
                 print(f"총알 충돌로 제거: {bullet.x} {bullet.y}")
             else:
@@ -226,11 +224,11 @@ def game(set_level):                            # 게임 실행 함수
                 else:
                     if enemy.state != 'die':  # 보스가 죽었을 때만 상태 변경
                         enemy.state = 'die'   # 보스 죽음 처리
-                        print(f"보스가 쓰러졌습니다! 위치: {enemy.position}")
+                        # print("보스 사망")
             else:
                 if enemy.state == 'die':
                     player.killed_enemy += 1              # 적 사살횟수 증가
-                    print(f"적 제거: {enemy.position} / {player.killed_enemy}")
+                    # print(f"적 제거: {enemy.position} / {player.killed_enemy}")
                 else:
                     remaining_enemies.append(enemy)       # 유효한 적만 유지
 
@@ -239,7 +237,7 @@ def game(set_level):                            # 게임 실행 함수
         
         # 적이 모두 제거되었을 경우 새로운 적 3개 생성
         if len(enemys_list) == 0 and player.killed_enemy <= stage.goal_enemy_kill: # 목표치에 도달하기 전까지 생성       
-            print("새로운 적을 생성합니다!")
+            # print("적 생성")
             enemys_list.extend(spawn_random_enemies(stage.spawn_enemy_num))  # 적 추가 생성, 스테이지별로 생성 횟수 다름    
         
         
@@ -291,7 +289,7 @@ def game(set_level):                            # 게임 실행 함수
         # 프레임 딜레이
         time.sleep(0.01)  # 짧은 시간 딜레이
 
-    print("플레이어 상태 확인", player.state)
+    # print("플레이어 상태 확인", player.state)
 
     if player.state == 'dead':
         print(f"stage {stage.stage_level} : 게임 실패")
@@ -301,9 +299,7 @@ def game(set_level):                            # 게임 실행 함수
         print(f"stage {stage.stage_level} : 게임 클리어")
         return True
 
-
 set_level = 1                                   # 처음 스테이지 레벨
-
 
 game_wait()                                     # 게임 시작 전 대기화면, 한 번만 재생
 

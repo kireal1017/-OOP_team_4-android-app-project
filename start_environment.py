@@ -46,7 +46,7 @@ def game_wait():
         # 배경 잘라내기
         cropped_current = scroller.get_cropped_image()
         
-        if scroll_vector == 1:                      # 오른쪽으로 갈지 왼쪽으로 스크롤할지 지정하는 부분
+        if scroll_vector == True:                      # 오른쪽으로 갈지 왼쪽으로 스크롤할지 지정하는 부분
             scroller.rightScroll(step = 2)
         else:
             scroller.leftScroll(step = 2)

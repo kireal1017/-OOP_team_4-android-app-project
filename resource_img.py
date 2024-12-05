@@ -1,4 +1,3 @@
-from collections import namedtuple
 from PIL import Image
 
 absolute_path = '/home/j9077/working_directory/' #혹시 모를 절대경로, 이유는 모르겠으나 상대경로를 쓰면 에러가 발생함
