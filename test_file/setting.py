@@ -83,7 +83,7 @@ class BackgroundScroller:
         if self.scroll_position <= self.maxplayerRange: # 왼쪽 끝에 도달했을 경우
             step = 0
         
-        print(self.scroll_position)                     # 테스트 출력
+        # print(self.scroll_position)                     # 테스트 출력
         self.scroll_position -= step
         
 
@@ -186,8 +186,6 @@ class Player:
                 
                 self.last_key_pressed = 'right'
                 
-            print("play x, y", self.character_x, self.character_y)
-            
             # 플레이어 좌표 최신화
             self.position = np.array([self.character_x, self.character_y])
             self.center = self.position + (self.character_size // 2)
@@ -205,7 +203,7 @@ class Player:
         self.last_damage_time = current_time
         
         if self.health <= 0:
-            print('플레이어 사망')
+            # print('플레이어 사망')
             return True
         
         return False                # 죽기 전까지는 게임 마저 실행
@@ -299,8 +297,6 @@ class Player:
         self.y_limit_sunset = 97
         self.y_limit_midnight = 77
         
-            
-
 class Enemy:
     def __init__(self, move, attack, hurt, dead, spawn_position, attack_power, speed, health, boss):
         self.move_img = move
@@ -443,12 +439,10 @@ class Bullet:
             self.x += self.speed
         
         self.position = [self.x, self.y, self.x + self.x_size, self.y + self.y_size] #위치 업데이트
-        print(self.position, enemy.position)
+        # print(self.position, enemy.position)
           
            
     def collision_check(self, enemys):              # 적에게 맞았는지 확인
-        print(type(enemys))
-        
         for enemy in enemys:
             collision = self.overlap(self.position, enemy.position)
             
@@ -542,5 +536,3 @@ class Stage_set:
             self.spawn_enemy_num = 5
 
 '''-------------------------------------------------- 스테이지 세팅 --------------------------------------------------'''
-
-# --------------------------------------------------------------------------- 게임 시작 전 설정 사항

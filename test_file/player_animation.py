@@ -12,22 +12,19 @@ player = Player(width = joystick.width,
                 character_size_y = 96) #캐릭터 사이즈 96 x 96
 
 
+display = Image.new("RGB", (joystick.width, joystick.height))           # 디스플레이 초기화
+
+draw_bar = ImageDraw.Draw(display)                                      # 체력 바 및 경고창을 그리기 위한 draw
+
+font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"      # 폰트 설정
+font = ImageFont.truetype(font_path, 25)                                # 폰트 크기, 게임 클리어에서 쓰임
+sub_font = ImageFont.truetype(font_path, 17)                            # 폰트 크기, 게임 오버 됬을 때 쓰임
 
 
-display = Image.new("RGB", (joystick.width, joystick.height))                       # 디스플레이 초기화
+goalState = False                               # 스테이지가 끝났음을 확인하기 위한 변수
+gameover = False                                # 
 
-draw_bar = ImageDraw.Draw(display)                                                  # 체력 바 및 경고창을 그리기 위한 draw
-
-font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # 폰트 설정
-font = ImageFont.truetype(font_path, 25)                            # 폰트 크기, 게임 클리어와 오버 됬을 때 쓰임
-sub_font = ImageFont.truetype(font_path, 17)                            # 폰트 크기, 게임 클리어와 오버 됬을 때 쓰임
-
-
-goalState = False                                                   # 스테이지가 끝났음을 확인하기 위한 변수
-
-# ------------------------------------------------------------------------------ 디스플레이 관련 설정
-
-def player_bullet_fire(player):               # 플레이어 총알 발사
+def player_bullet_fire(player):                 # 플레이어 총알 발사
     if not current_button_state and player.previous_button_state:  # 버튼이 눌림 (연속적으로 눌린 상태를 읽는 것을 방지)
         for i in range(len(player_shoot)):
             if player.last_key_pressed == 'right':
@@ -45,7 +42,7 @@ def player_bullet_fire(player):               # 플레이어 총알 발사
         bullet = Bullet(player.last_key_pressed, player.character_x, player.character_y)
         bullets.append(bullet)
 
-def spawn_random_enemies(num_enemies):  # 적 랜덤으로 생성, num_enemies 생성할 적의 리스트를 받음
+def spawn_random_enemies(num_enemies):          # 적 랜덤으로 생성, num_enemies 생성할 적의 리스트를 받음
     if stage.enemy_type == 'monsterLV1':
         enemy_config = {
             'move': monsterLV1_move,
@@ -98,7 +95,7 @@ def spawn_random_enemies(num_enemies):  # 적 랜덤으로 생성, num_enemies �
         new_enemies.append(new_enemy)
     return new_enemies
 
-def spawn_boss(): # 보스 생성하기
+def spawn_boss():                               # 보스 생성하기
     if stage.boss == 'bossLV1':
         print("LV1")
         enemy_config = {
@@ -150,16 +147,14 @@ def spawn_boss(): # 보스 생성하기
         )
     enemys_list.append(make_boss)  # 보스를 적 목록에 추가
 
-def is_boss_check(enemys_list): # 적 리스트를 순회하면서 보스가 있는지 확인
+def is_boss_check(enemys_list):                 # 적 리스트를 순회하면서 보스가 있는지 확인
     for enemy in enemys_list:
         if enemy.boss_check:  # 보스 여부 확인
             return True  # 보스가 존재하면 True 반환
     return False  # 보스가 없다면 False 반환
 
-
-
-def game(set_level):
-    global bullets, enemys_list, goalState, stage                              # 글로벌로 선언하여 다른 함수들도 참조 가능하도록
+def game(set_level):                            # 게임 실행 함수
+    global bullets, enemys_list, goalState, stage, gameover                              # 글로벌로 선언하여 다른 함수들도 참조 가능하도록
     
 
 
@@ -282,6 +277,8 @@ def game(set_level):
                 
         if len(enemys_list) == 0 and player.killed_enemy >= stage.goal_enemy_kill:
             draw_bar.text((30, 150), f"{stage.stage_level} Level Clear! ", font=font, fill=(0, 0, 255))
+            if stage.stage_level == 3:
+                draw_bar.text((60, 210), "B : Restart", font=sub_font, fill=(0, 255, 0))
             goalState = True
 
         joystick.disp.image(display)
@@ -298,30 +295,28 @@ def game(set_level):
 
     if player.state == 'dead':
         print(f"stage {stage.stage_level} : 게임 실패")
-        return False
+        gameover = True
+        return
     else:
         print(f"stage {stage.stage_level} : 게임 클리어")
         return True
+
+
+set_level = 1                                   # 처음 스테이지 레벨
+
+
+while True:                                     # 게임 무한 반복함
     
-
-set_level = 1
-
-while True:
-    if game(set_level) == True:
-        if set_level < 3:
-            set_level += 1   # 다음 스테이지로 이동
-            goalState = False
-        else:
-            break
-    else:
-        print("조이스틱 입력")
-        if not joystick.button_B.value:
-            set_level = 1
-            goalState = False
-            game(set_level)
-
- 
-        
-print("게임 프로그램 종료")
+    goalState = False
+    game(set_level)
+    set_level += 1
+    
+    if gameover or set_level == 4:
+        while True:
+            #print("조이스틱 입력")
+            if not joystick.button_B.value:
+                set_level = 1
+                gameover = False
+                break
 
     
